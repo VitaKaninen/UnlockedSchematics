@@ -28,8 +28,9 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_DECOMP = os.path.join(
-    os.environ.get("TEMP", ""), "claude", "decomp")
+# No sensible default: the decompile lives wherever it was last generated, and guessing a
+# path only produces a confusing "not found" pointing somewhere it was never going to be.
+DEFAULT_DECOMP = ""
 
 # Fields RimWorld reads on every PatchOperation regardless of subclass.
 BASE_FIELDS = {"success", "sourceFile"}
@@ -112,9 +113,12 @@ def walk(node, types, path, problems):
 
 def main():
     decomp = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DECOMP
+    if not decomp:
+        print("usage: python Dev/validate_patches.py <path-to-decompiled-source>")
+        print("see the docstring for the ilspycmd command that generates it")
+        return 2
     if not os.path.isdir(decomp):
         print(f"decompiled source not found at: {decomp}")
-        print("pass the path as an argument; see the docstring for how to generate it")
         return 2
 
     types = load_types(decomp)
