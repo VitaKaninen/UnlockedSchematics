@@ -406,10 +406,11 @@ valid book subject.
    closing Claude. The four state stores keyed to the old path were then migrated with
    `~/.claude/bin/migrate_project_path.py`; procedure in `~/.claude/docs/SESSIONS.md`.
 2. `git init` + `.gitignore` (`.claude/`, `obj/`, `bin/`).
-3. **No GitHub remote yet, by decision (2026-08-26).** Everything in the repo so far is
-   test scaffolding that will be thrown away; the remote gets created once Changes 2 and 3
-   land and there is something permanent to publish. Until then the folder-wide "commit and
-   push every change" rule is commit-only — do **not** create the remote to satisfy it.
+3. **Remote created 2026-08-26**, once the mod was verified working:
+   <https://github.com/VitaKaninen/UnlockedSchematics>, public, default branch `main`
+   (matching `CarryCapacityFromBionics`). The local branch was renamed `master` -> `main`
+   at the same time. The folder-wide "commit and push every change" rule now applies in
+   full.
 
 ### Phase 1 — skeleton
 
@@ -543,7 +544,16 @@ is still unrun.
 
 ### Phase 5 — publish
 
-Steam Workshop under `VitaKaninen`. Commit and push per the folder rules.
+GitHub: **done 2026-08-26** — <https://github.com/VitaKaninen/UnlockedSchematics>.
+
+Steam Workshop under `VitaKaninen`: not yet. Outstanding first:
+
+- `About/Preview.png` — the Workshop listing needs one.
+- Change 3's clamp is still unexercised (§0). Decide whether to test it or drop it rather
+  than shipping a patch nobody has seen run.
+
+The uploader honours `.rimignore`, which already excludes `Source`, `Dev`, `PLAN.md`,
+`*-brief.md` and `CLAUDE.md`, so only `About/`, `Patches/` and `Assemblies/` ship.
 
 ---
 
