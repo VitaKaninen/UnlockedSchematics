@@ -50,7 +50,15 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   applies — so it yields subjects whose prerequisites are unresearched, which reads exactly
   like a mod bug. Cost a full round of confusion 2026-08-26; see PLAN.md §6a.
 - **`ResearchProjectDef.IsFinished` is `ProgressReal >= Cost`, and nothing else.**
-  Recipes and buildings test it directly, so a project is effectively unlocked the moment
-  progress reaches `Cost` — whether or not `FinishProject` ran. Any "bank progress but keep
-  it locked" behaviour has to hold progress *strictly below* `Cost`; suppressing the
-  completion call is not enough.
+  `BuildableDef.IsResearchFinished` — the gate behind the build menu — just loops
+  `researchPrerequisites[i].IsFinished`, so a project is unlocked the moment progress
+  reaches `Cost`, whether or not `FinishProject` ran. `AnalyzedThingsRequirementsMet`
+  appears in exactly two places in the assembly (`CanStartNow` and the research tab UI) and
+  in neither unlock path. **Consequence, true in vanilla with no mods:** reading a wastepack
+  atomizer book to 100% makes the atomizer buildable without ever studying the
+  NanostructuringChip.
+- **This mod deliberately does not fix that.** It gates *generation* only. A book that
+  already exists stays readable and can still finish locked research — that is vanilla
+  behaviour and it is wanted (PLAN.md §2). A clamp on `AddProgress` was written for the
+  original design and removed 2026-08-26 once generation became the gate; don't reintroduce
+  it because "the gate must hold" sounds right. Read §2 first.

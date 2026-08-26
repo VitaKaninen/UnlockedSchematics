@@ -14,7 +14,10 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 |---|---|
 | Change 1 — XML, drop the exclude list | **done, verified in game** |
 | Change 2 — Harmony, unlock-aware eligibility | **done, verified in game** |
-| Change 3 — Harmony, gate clamp backstop | built and shipping; its one scenario is untested |
+| ~~Change 3 — Harmony, gate clamp~~ | **removed 2026-08-26** — see §2 |
+
+**The mod is two changes, not three.** One XML patch and one Harmony patch. It does not
+touch `AddProgress` at all, so it cannot interfere with any other mod's research progress.
 
 **The mod does what it is meant to do.** Verified in a real save 2026-08-26, harness off:
 
@@ -24,20 +27,20 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 | Gained a mechanitor → BasicMechtech schematics start appearing | `PlayerMechanitorRequirementMet` gate works |
 | Studied a grav engine → BasicGravtech schematics start appearing | `InspectionRequirementsMet` gate works |
 | Applied a techprint → that project's schematics start appearing | `TechprintRequirementMet` gate works, and clause (e) is successfully neutralised |
-
 | Mechanitor died → mechtech subjects stop generating again | The gate re-locks symmetrically, matching vanilla's own re-locking of the research |
 
-That is test plan §6 rows 1, 2, 4, 5 and 6 passing, plus the generation half of row 7. It
-exercises both directions of Change 2 — nothing locked gets through, each gate opens the
-moment it is satisfied, and each closes again if it lapses.
+That is the whole of the intended behaviour, verified. It exercises both directions of
+Change 2 — nothing locked gets through, each gate opens the moment it is satisfied, and
+each closes again if it lapses.
 
-**Change 3 is still untested, and the mechanitor-death test did not cover it.** That test
-showed generation stopping, which is Change 2. The clamp only fires on a book that *already
-exists* being read after its gate lapses — generate a mechtech schematic first, *then* let
-the mechanitor die, then read that book. Progress should park below 100%.
+**A book already in the world is deliberately left alone.** If you unlock mechtech, acquire
+a schematic, and then your only mechanitor dies, that book stays readable and can still
+finish the research. That is vanilla behaviour and it is wanted: you earned access to the
+tech, and if you no longer want it you can sell or destroy the book — no more will spawn.
+This is why the Change 3 clamp was removed (§2).
 
-Rows 8 (bench-research regression) and 10 (pre-mod save) are also unrun, though row 8 is
-guarded by code: `AddProgress` has exactly one caller in the whole assembly (§2).
+Unrun: a pre-mod save load. Bench research needs no test — the mod no longer patches
+anything on that path.
 
 ### Cleanup owed before release
 
@@ -152,7 +155,7 @@ XML-vs-Harmony for the techprint case: Harmony.
 
 ---
 
-## 2. The finding that changes the design
+## 2. Reading a book can finish research the bench refuses to start
 
 `ResearchManager.AddProgress` — the method a schematic calls every reading tick — ends
 with this:
@@ -163,42 +166,48 @@ if (proj.PrerequisitesCompleted && proj.IsFinished)
     FinishProject(proj, doCompletionDialog: true, source);
 ```
 
-and `IsFinished` is purely `ProgressReal >= Cost`. It consults **no secondary gate** —
-not techprints, not mechanitor, not grav-engine inspection.
+`IsFinished` is purely `ProgressReal >= Cost`. It consults **no secondary gate** — not
+techprints, not mechanitor, not grav-engine inspection, not analysed things.
 
-**Consequence: unblocking generation alone breaks the gate.** A colonist reading a
-Cataphract Armor schematic long enough fills the bar to 100%, `AddProgress` calls
-`FinishProject`, and the research completes with zero techprints applied. That is exactly
-the outcome the brief says the mod must not produce.
+And the unlock that follows is progress-based too. `BuildableDef.IsResearchFinished`, the
+gate behind the build menu, autorebuild, and room requirements, is just:
 
-This applies to the XML half too — remove the exclude entries and a schematic can complete
-`BasicMechtech` for a colony with no mechanitor. **So there is no viable XML-only version
-of this mod.** Harmony is required either way.
+```csharp
+for (int i = 0; i < researchPrerequisites.Count; i++)
+    if (!researchPrerequisites[i].IsFinished) return false;   // ProgressReal >= Cost
+```
 
-Vanilla never hits this because vanilla excludes every gated project from schematics in
-the first place. The mod creates the situation and must therefore also close it.
+`AnalyzedThingsRequirementsMet` appears in exactly **two** places in the whole assembly:
+`CanStartNow`, and the research tab's UI colouring. Nothing in the unlock path consults it.
 
-Worth noting *why* clamping is the fix rather than suppressing `FinishProject`: recipes
-and buildings test `researchPrerequisite.IsFinished`, which is progress-based. If progress
-reaches `Cost` the tech is effectively unlocked whether or not `FinishProject` ran. So
-progress must be held **strictly below** `Cost`.
+**So in vanilla, reading a wastepack atomizer book to 100% makes the atomizer buildable
+without the NanostructuringChip ever being studied.** The bench refuses to start that
+research; a book finishes it anyway. This is vanilla's behaviour, reachable today with no
+mods, and it is a bigger deal than the wasted book slot that made us notice it.
 
-The bench path is safe to leave alone: `ResearchManager.ResearchPerformed` writes
-`progress[currentProj]` directly and never calls `AddProgress`. Patching `AddProgress`
-cannot affect normal bench research.
+### Why the mod does not "fix" this
 
-**Confirmed 2026-08-26 by grepping the full decompile:** `ResearchManager.AddProgress` has
-**exactly one caller in the entire assembly** — `ReadingOutcomeDoerGainResearch
-.OnReadingTick`. (The other `AddProgress` hits are `CompSpawnSubplant.AddProgress`, an
-unrelated method with the same name.) So in vanilla the clamp patch can only ever fire on
-the schematic reading path. Test 6 is still worth running, but the code already proves it.
+An earlier design added a Harmony clamp on `AddProgress` holding gated projects strictly
+below `Cost`. **That was removed 2026-08-26.** Two reasons:
 
-One more reason the clamp is load-bearing rather than belt-and-braces: `OnReadingTick`
-skips a project when `IsProjectVisible` is false, and that reads `Props.usesHiddenProjects`
--> `CanStartNow`, which *does* consult every gate. If the `Schematic` ThingDef set
-`usesHiddenProjects`, gated projects would receive no progress at all and Change 3 would be
-unnecessary. It does not set it, and the field defaults to `false` — checked in the shipped
-`Core/Defs/Books/BookDefs.xml`. So progress really does flow to gated projects.
+1. **The mod no longer creates the situation.** Change 2 gates *generation* on the unlock
+   requirements, so a schematic is never written about locked research in the first place.
+   The clamp was solving a problem that only existed under the old design.
+2. **It broke a wanted vanilla behaviour.** If you unlock mechtech, acquire a book, and
+   then your only mechanitor dies, that book should stay readable — the research is a
+   thing you already earned access to, and RimWorld lets you continue it. The clamp would
+   have frozen it at 99.9% instead. Keeping a book you deliberately held onto working is
+   the point; if you don't want the tech, sell or destroy the book and no more will spawn.
+
+The upshot: the mod does not touch `AddProgress` at all any more, which also removes its
+only patch that could interact with other mods' research progress.
+
+For the record, since it took work to establish: `AddProgress` has **exactly one caller in
+the entire assembly**, `ReadingOutcomeDoerGainResearch.OnReadingTick`. (The other
+`AddProgress` hits are `CompSpawnSubplant.AddProgress`, an unrelated method sharing the
+name.) And `OnReadingTick` does apply progress to gated projects: it skips a project only
+when `IsProjectVisible` is false, which reads `Props.usesHiddenProjects` -> `CanStartNow`,
+and the `Schematic` ThingDef leaves that flag at its `false` default.
 
 ---
 
@@ -308,33 +317,22 @@ friends add a lot of it, and that is where most of the real-world value sits.
 it, so this patch also applies to the Anomaly book. Harmless — no Anomaly project has
 techprints — but it should be stated in a code comment so it isn't rediscovered later.
 
-### Change 3 — Harmony: hold gated projects below completion
+### ~~Change 3 — Harmony: hold gated projects below completion~~ — removed
 
-Target: `ResearchManager.AddProgress(ResearchProjectDef, float, Pawn)`
+Target was `ResearchManager.AddProgress(ResearchProjectDef, float, Pawn)`, clamping the
+increment so a project with any unmet gate could never reach `Cost`.
 
-```csharp
-static void Prefix(ResearchProjectDef proj, ref float amount)
-{
-    if (proj.TechprintRequirementMet
-        && proj.PlayerMechanitorRequirementMet
-        && proj.AnalyzedThingsRequirementsMet
-        && proj.InspectionRequirementsMet)
-        return;                                   // no gate outstanding, vanilla behaviour
+**Deleted 2026-08-26.** It belonged to the original design, where schematics could be
+generated for locked research and something had to stop them completing it. Once Change 2
+gated generation instead, the clamp had no problem left to solve — and worse, it broke a
+behaviour that is wanted: a book acquired while the tech was unlocked should stay usable if
+the gate later lapses. Full reasoning in §2.
 
-    float cap     = proj.Cost - Epsilon;          // Epsilon scaled off Cost, see below
-    float current = Find.ResearchManager.GetProgress(proj);
-    amount = Mathf.Max(0f, Mathf.Min(amount, cap - current));
-}
-```
-
-All four gates, not just techprints — Change 1 unblocks Mechtech (`requiresMechanitor`,
-`requiredAnalyzed`) and Gravtech (`requireGravEngineInspected`), so those need the same
-protection.
-
-`Epsilon`: a fixed `0.01f` is fine for vanilla costs (500–4000) but gets lost in float
-precision on very large modded costs. Use `Mathf.Max(0.01f, proj.Cost * 0.001f)` so the
-bar parks at ~99.9% and the remainder is always representable. The player applies the
-techprint, selects the project, and one tick at the bench finishes it.
+Recoverable from git history if it is ever needed (`Source/UnlockedSchematics/
+Patch_ResearchGateClamp.cs`, removed in the commit that added this note). Do not restore it
+without re-reading §2 first — "the gate must hold" is the intuition that put it there, and
+it is the wrong frame: the gate is enforced at generation, and vanilla itself lets an
+existing book finish locked research.
 
 ---
 
@@ -432,7 +430,6 @@ UnlockedSchematics/
       UnlockedSchematics.csproj
       Mod.cs                 Harmony bootstrap
       Patch_SchematicEligibility.cs
-      Patch_ResearchGateClamp.cs
   Dev/
     README.md
     validate_patches.py    patch XML checks an XPath test misses
@@ -487,14 +484,12 @@ Bugs 2 and 3 both parse as valid XML and both target the right node, so the XPat
 simulation used before the first test said "PASS" on each. `Dev/validate_patches.py` was
 written afterwards and catches both; run it before trusting patch XML.
 
-### Phase 3 — Changes 2 and 3 — **built 2026-08-26, untested in game**
+### Phase 3 — the Harmony half — **done, verified in game 2026-08-26**
 
-One Harmony class each, both shipped in the same build so there is never a build in which
-the gate is bypassable:
-
-- `Source/UnlockedSchematics/Patch_SchematicEligibility.cs` — Change 2
-- `Source/UnlockedSchematics/Patch_ResearchGateClamp.cs` — Change 3
+- `Source/UnlockedSchematics/Patch_SchematicEligibility.cs` — Change 2, the only patch
 - `Source/UnlockedSchematics/Mod.cs` — `[StaticConstructorOnStartup]` Harmony bootstrap
+
+Change 3 lived here too until it was removed the same day; see §2.
 
 **Toolchain, confirmed rather than assumed:**
 
@@ -576,14 +571,12 @@ read the warning in `Dev/README.md` first.
 | 4 | Recruit a mechanitor, spawn ~30 | BasicMechtech appears; StandardMechtech does not (needs BasicMechtech + SignalChip) |
 | 5 | Inspect a grav engine, spawn ~30 | BasicGravtech appears |
 | 6 | Before studying a NanostructuringChip, spawn ~30 | **No** WastepackAtomizer subject — the vanilla bug in §2a is fixed |
-| 7 | Generate a mechtech schematic, then let the only mechanitor die, then read it | Progress parks below 100%; research does not complete (Change 3's backstop) |
-| 8 | Normal bench research on an ungated project | Completes exactly as vanilla — proves the `AddProgress` clamp does not touch `ResearchPerformed` |
-| 9 | Read a schematic for an ordinary project | Unchanged from vanilla |
-| 10 | Load a save made before the mod | No errors, no progress reset |
+| 7 | Let the only mechanitor die | Mechtech subjects stop generating; **a mechtech book you already own stays readable and can still finish the research** — vanilla behaviour, deliberately preserved |
+| 8 | Read a schematic for an ordinary project | Unchanged from vanilla |
+| 9 | Load a save made before the mod | No errors, no progress reset |
 
-Test 1 is the one the design change exists for. Test 7 is the only remaining exercise of
-Change 3 and needs setting up deliberately. Test 8 is the regression guard for the riskiest
-patch.
+Test 1 is the one the design change exists for. There is no bench-research regression test
+any more — the mod does not patch `AddProgress`, so that path is untouched by construction.
 
 ### 6a. Why the 2026-08-26 session's result was misleading
 

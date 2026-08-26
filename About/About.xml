@@ -25,5 +25,7 @@ Crucially, it does not flood your book pool with research you cannot use. A colo
 
 Works with modded research, including techprint-gated projects added by other mods.
 
-Safe to add to an existing save. If a requirement later lapses - your only mechanitor dies, say - any schematic already written about that research stops short of completing it.</description>
+Books you already have are left alone. If a requirement later lapses - your only mechanitor dies, say - a schematic you already own stays readable and can still finish that research, exactly as in vanilla. No new ones will spawn until the requirement is met again.
+
+Safe to add to an existing save.</description>
 </ModMetaData>
