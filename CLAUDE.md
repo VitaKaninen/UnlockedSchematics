@@ -8,6 +8,16 @@ Findings, design and build order: [PLAN.md](PLAN.md). Original brief:
 Folder-wide rules (commit/push, `.rimignore`, `loadFolders` shadowing, and the XML `Class`
 attribute gotcha) live in the parent folder's CLAUDE.md.
 
+## Building
+
+```bash
+cd Source/UnlockedSchematics && dotnet build -c Release
+```
+
+Output goes straight to `Assemblies/UnlockedSchematics.dll`, which **is** committed — the
+repo is the mod. Package versions are pinned on purpose; see PLAN.md Phase 3 before
+changing them.
+
 ## Before touching any patch XML
 
 Run the validator. It checks the things an XML parser and an XPath test both miss:
@@ -25,10 +35,6 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
 
 ## Gotchas
 
-- **Labels may not contain `[ ] { }`.** `Def.DisallowedLabelCharsRegex` rejects only
-  those four; they break grammar resolution and raise a config error unless the def sets
-  `ignoreIllegalLabelCharacterConfigError`. Parentheses are fine — prefer them over the
-  flag for temporary test labels. `Dev/validate_patches.py` checks this.
 - **A patch that parses and whose XPath matches can still be wrong.** Simulating the XPath
   against the shipped def proves only that the *target* is right, never that the XML binds
   to the C# fields. Those are separate failure modes and need separate checks.

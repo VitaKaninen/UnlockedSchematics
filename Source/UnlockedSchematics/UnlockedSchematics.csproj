@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>UnlockedSchematics</AssemblyName>
+    <RootNamespace>UnlockedSchematics</RootNamespace>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Drop the DLL straight into the mod's Assemblies folder. -->
+    <OutputPath>..\..\Assemblies\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!-- RimWorld loads a bare DLL; no pdb, no deps.json, no satellite files. -->
+    <DebugType>none</DebugType>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions are pinned, not floating, so the build is reproducible. Neither reference
+         version has to match what the game loads: 0Harmony and Assembly-CSharp are both
+         compiled without a strong name (PublicKeyToken is null), so the runtime binds them
+         by simple name and ignores the version. That is why a mod built against ref 1.6.4871
+         runs against any 1.6.x game build, and against Harmony 2.4.1 despite referencing 2.4.2. -->
+
+    <!-- Publicized RimWorld reference assemblies. Reference-only: never shipped. -->
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" ExcludeAssets="runtime" PrivateAssets="all" />
+
+    <!-- Harmony comes from the Harmony mod at runtime, so compile against it but do not copy it. -->
+    <PackageReference Include="Lib.Harmony" Version="2.4.2" ExcludeAssets="runtime" PrivateAssets="all" />
+
+    <!-- Lets net472 build on a machine with no Visual Studio targeting pack installed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

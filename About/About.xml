@@ -6,9 +6,22 @@
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+      <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
   <description>Research schematics are never generated for a handful of research projects that vanilla hides behind a second unlock step - the Biotech mechtech line, the Odyssey gravtech line, and every Royalty project that needs a techprint.
 
-This mod lets schematics generate for those projects too. The unlock requirement itself is untouched: a pawn can read a schematic and bank research progress toward a gated project, but the project still cannot be completed at the bench until the techprint is applied, a mechanitor joins the colony, or a grav engine is inspected.
+This mod lets schematics generate for those projects too. The unlock requirement itself is untouched: a pawn can read a schematic and bank research progress toward a gated project, but the project still cannot be completed at the bench until the techprint is applied, a mechanitor joins the colony, or a grav engine is inspected. Progress on a gated project parks just short of 100% and finishes the moment you satisfy the requirement.
 
-TEST BUILD - this build contains the def patch only (mechtech + gravtech). The techprint patch and the research-gate safeguard are not included yet, so a schematic read to 100% CAN currently complete a gated project. Not intended for a real playthrough.</description>
+Works with modded research too, including techprint-gated projects added by other mods.
+
+Safe to add to an existing save. Removing it mid-save leaves any part-read schematics pointing at projects they can no longer contribute to, so prefer removing it between playthroughs.</description>
 </ModMetaData>

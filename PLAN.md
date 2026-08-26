@@ -13,8 +13,8 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 | | |
 |---|---|
 | Change 1 — XML, mechtech + gravtech | **done and verified in game** |
-| Change 2 — Harmony, techprints | not started |
-| Change 3 — Harmony, gate clamp | not started |
+| Change 2 — Harmony, techprints | **written, compiles clean — not yet tested in game** |
+| Change 3 — Harmony, gate clamp | **written, compiles clean — not yet tested in game** |
 
 **Verified 2026-08-26:** with `Dev/TestHarness` loaded below the mod, every generated
 schematic was a mechtech or gravtech subject, and the harness label read
@@ -22,17 +22,22 @@ schematic was a mechtech or gravtech subject, and the harness label read
 that those seven projects now reach the candidate pool. It does **not** yet test that the
 gates still hold — that is Change 3's job.
 
-**Next action:** Phase 3. Changes 2 and 3 must ship in the same build; see §2 for why
-shipping Change 2 alone would let a reader complete a techprint-gated project outright.
+**Built 2026-08-26:** Changes 2 and 3 exist as `Assemblies/UnlockedSchematics.dll`, built
+from `Source/`. Verified at build time: 0 warnings, both patch classes decompile back to
+the intended targets, and `Dev/validate_patches.py` still passes. **Nothing about the
+runtime behaviour has been tested yet** — compiling proves the members exist and the
+attributes bind, not that the gate holds.
+
+**Next action:** Phase 4, the in-game test plan in §6. Tests 2–5 are the ones that matter;
+they are the first real evidence that the clamp works.
 
 ### Cleanup owed before release
 
 - `Dev/TestHarness` is installed as a separate mod at
   `RimWorld/Mods/UnlockedSchematics_TESTONLY` and is currently **enabled** in the mod list.
   Disable and delete it before any real playthrough — it forces every schematic to one of
-  seven subjects and rewrites the Schematic label.
-- `About/About.xml` still carries a `TEST BUILD` paragraph in its description. Remove it
-  once Changes 2 and 3 land.
+  seven subjects and rewrites the Schematic label. It is still useful for Phase 4 test 1;
+  it must be **disabled** for tests 2–7, which need ordinary schematic generation.
 
 ### Environment notes for the next session
 
@@ -175,6 +180,19 @@ The bench path is safe to leave alone: `ResearchManager.ResearchPerformed` write
 `progress[currentProj]` directly and never calls `AddProgress`. Patching `AddProgress`
 cannot affect normal bench research.
 
+**Confirmed 2026-08-26 by grepping the full decompile:** `ResearchManager.AddProgress` has
+**exactly one caller in the entire assembly** — `ReadingOutcomeDoerGainResearch
+.OnReadingTick`. (The other `AddProgress` hits are `CompSpawnSubplant.AddProgress`, an
+unrelated method with the same name.) So in vanilla the clamp patch can only ever fire on
+the schematic reading path. Test 6 is still worth running, but the code already proves it.
+
+One more reason the clamp is load-bearing rather than belt-and-braces: `OnReadingTick`
+skips a project when `IsProjectVisible` is false, and that reads `Props.usesHiddenProjects`
+-> `CanStartNow`, which *does* consult every gate. If the `Schematic` ThingDef set
+`usesHiddenProjects`, gated projects would receive no progress at all and Change 3 would be
+unnecessary. It does not set it, and the field defaults to `false` — checked in the shipped
+`Core/Defs/Books/BookDefs.xml`. So progress really does flow to gated projects.
+
 ---
 
 ## 3. What the mod does — three changes
@@ -312,9 +330,9 @@ UnlockedSchematics/
     Preview.png          to build
   Patches/
     UnlockedSchematics_SchematicExcludes.xml
-  Assemblies/            to build
-    UnlockedSchematics.dll
-  Source/                to build
+  Assemblies/
+    UnlockedSchematics.dll     build output, committed - the repo is the mod
+  Source/
     UnlockedSchematics/
       UnlockedSchematics.csproj
       Mod.cs                 Harmony bootstrap
@@ -335,10 +353,8 @@ UnlockedSchematics/
 about whether Patches are processed before Defs within one `loadFolders` entry is now moot
 twice over: there is no `LoadFolders.xml`, and the mod ships no Defs.
 
-Build target: the game assembly carries no `TargetFrameworkAttribute` (Unity does not emit
-one) but `Managed/` contains `netstandard.dll`, i.e. the .NET 4.x profile. `net472` via
-the `Krafs.Rimworld.Ref` + `Lib.Harmony` NuGet packages is the community standard for
-1.6 — confirm on first build rather than taking it on trust.
+Build target: `net472` via the `Krafs.Rimworld.Ref` + `Lib.Harmony` NuGet packages —
+**confirmed by building, 2026-08-26**, not taken on trust. Details in Phase 3.
 
 ### Phase 2 — Change 1, verify in isolation — **done, verified in game 2026-08-26**
 
@@ -376,10 +392,36 @@ Bugs 2 and 3 both parse as valid XML and both target the right node, so the XPat
 simulation used before the first test said "PASS" on each. `Dev/validate_patches.py` was
 written afterwards and catches both; run it before trusting patch XML.
 
-### Phase 3 — Changes 2 and 3
+### Phase 3 — Changes 2 and 3 — **built 2026-08-26, untested in game**
 
-Both patches in one Harmony class. Change 3 is not optional and must land in the same
-build as Change 2, otherwise there is a build in which the gate is bypassable.
+One Harmony class each, both shipped in the same build so there is never a build in which
+the gate is bypassable:
+
+- `Source/UnlockedSchematics/Patch_SchematicEligibility.cs` — Change 2
+- `Source/UnlockedSchematics/Patch_ResearchGateClamp.cs` — Change 3
+- `Source/UnlockedSchematics/Mod.cs` — `[StaticConstructorOnStartup]` Harmony bootstrap
+
+**Toolchain, confirmed rather than assumed:**
+
+```bash
+cd Source/UnlockedSchematics && dotnet build -c Release
+```
+
+Writes straight to `Assemblies/UnlockedSchematics.dll`. Built with dotnet SDK 10.0.400;
+`net472` resolves without Visual Studio thanks to the
+`Microsoft.NETFramework.ReferenceAssemblies` package. Versions are **pinned** for
+reproducibility: `Krafs.Rimworld.Ref` 1.6.4871 (exactly the installed game build) and
+`Lib.Harmony` 2.4.2.
+
+The pins do not have to match what the game loads. The installed Harmony mod ships 2.4.1,
+and both `0Harmony` and `Assembly-CSharp` are built **without a strong name**
+(`PublicKeyToken` is null), so the runtime binds them by simple name and ignores the
+version entirely — verified by reflection, not assumed. This is also why any 1.6.x game
+build accepts an assembly compiled against ref 1.6.4871.
+
+Build-time verification done: 0 warnings; both patch classes decompiled back out of the
+built DLL to confirm the attributes and `AccessTools` lookup are what was intended;
+`IsValid`'s exact name/arity and all four gate property names read off the decompile first.
 
 ### Phase 4 — testing (see below)
 
