@@ -413,8 +413,13 @@ Writes straight to `Assemblies/UnlockedSchematics.dll`. Built with dotnet SDK 10
 reproducibility: `Krafs.Rimworld.Ref` 1.6.4871 (exactly the installed game build) and
 `Lib.Harmony` 2.4.2.
 
-The pins do not have to match what the game loads. The installed Harmony mod ships 2.4.1,
-and both `0Harmony` and `Assembly-CSharp` are built **without a strong name**
+The pins do not have to match what the game loads, and in fact they don't. The Harmony
+**mod** is version 2.4.2.0, but the **library** it ships — `Current/Assemblies/0Harmony.dll`
+— is stamped 2.4.1.0; the 2.4.2 release bumped `HarmonyMod.dll` and the manifest without
+rebuilding the library's assembly version. So our reference to `0Harmony 2.4.2.0` resolves
+against a 2.4.1.0 binary at runtime.
+
+That is harmless: both `0Harmony` and `Assembly-CSharp` are built **without a strong name**
 (`PublicKeyToken` is null), so the runtime binds them by simple name and ignores the
 version entirely — verified by reflection, not assumed. This is also why any 1.6.x game
 build accepts an assembly compiled against ref 1.6.4871.
