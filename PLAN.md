@@ -12,37 +12,35 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 
 | | |
 |---|---|
-| Change 1 — XML, mechtech + gravtech | **done and verified in game** |
-| Change 2 — Harmony, techprints | **written, compiles clean — not yet tested in game** |
-| Change 3 — Harmony, gate clamp | **written, compiles clean — not yet tested in game** |
+| Change 1 — XML, drop the exclude list | **done, verified in game** |
+| Change 2 — Harmony, unlock-aware eligibility | **done, verified in game** |
+| Change 3 — Harmony, gate clamp backstop | built and shipping; its one scenario is untested |
 
-**Verified 2026-08-26:** with `Dev/TestHarness` loaded below the mod, every generated
-schematic was a mechtech or gravtech subject, and the harness label read
-`schematic (OK - blocklist removed)`. That confirms the `<exclude>` removal applies and
-that those seven projects now reach the candidate pool. It does **not** yet test that the
-gates still hold — that is Change 3's job.
+**The mod does what it is meant to do.** Verified in a real save 2026-08-26, harness off:
 
-**Built 2026-08-26:** Changes 2 and 3 exist as `Assemblies/UnlockedSchematics.dll`, built
-from `Source/`. Verified at build time: 0 warnings, both patch classes decompile back to
-the intended targets, and `Dev/validate_patches.py` still passes. **Nothing about the
-runtime behaviour has been tested yet** — compiling proves the members exist and the
-attributes bind, not that the gate holds.
+| Observed | Confirms |
+|---|---|
+| Everything researched bar the locked lines → only already-researched subjects spawn | Locked research is correctly excluded; the empty pool falls back exactly as §6a predicts |
+| Gained a mechanitor → BasicMechtech schematics start appearing | `PlayerMechanitorRequirementMet` gate works |
+| Studied a grav engine → BasicGravtech schematics start appearing | `InspectionRequirementsMet` gate works |
+| Applied a techprint → that project's schematics start appearing | `TechprintRequirementMet` gate works, and clause (e) is successfully neutralised |
 
-**Design changed 2026-08-26 after play testing** — schematics now generate only for
-research whose unlock requirements are already met. See the callout above §3 for why, and
-§2a for the vanilla bug it fixes on the way. Changes 2 and 3 are rebuilt; still untested.
+That is test plan §6 rows 1, 2, 4, 5 and 6 passing. It exercises both directions of Change
+2 — nothing locked gets through, and each gate opens the moment it is satisfied.
 
-**Next action:** Phase 4, the in-game test plan in §6. **Disable `Dev/TestHarness` first** —
-leaving it on is what made the previous test result unreadable (§6a). Test 1 is the one the
-redesign exists for.
+**Still untested:** row 7, the only remaining path into Change 3 — generate a mechtech
+schematic, then let the colony's only mechanitor die, then read it. Needs deliberate
+setup. Rows 8 (bench-research regression) and 10 (pre-mod save) are also unrun, though row
+8 is guarded by code: `AddProgress` has exactly one caller in the whole assembly (§2).
 
 ### Cleanup owed before release
 
 - `Dev/TestHarness` is installed as a separate mod at
-  `RimWorld/Mods/UnlockedSchematics_TESTONLY` and is currently **enabled** in the mod list.
-  Disable and delete it before any real playthrough — it forces every schematic to one of
-  seven subjects and rewrites the Schematic label. It is still useful for Phase 4 test 1;
-  it must be **disabled** for tests 2–7, which need ordinary schematic generation.
+  `RimWorld/Mods/UnlockedSchematics_TESTONLY`. Disable and delete it before any real
+  playthrough — it replaces the candidate pool and rewrites the Schematic label. It has
+  done its job (it proved Change 1 applies) and is now actively misleading: leaving it on
+  is what produced the unreadable result in §6a.
+- `About/Preview.png` does not exist yet. Steam Workshop wants one before publishing.
 
 ### Environment notes for the next session
 
@@ -534,7 +532,10 @@ Build-time verification done: 0 warnings; both patch classes decompiled back out
 built DLL to confirm the attributes and `AccessTools` lookup are what was intended;
 `IsValid`'s exact name/arity and all four gate property names read off the decompile first.
 
-### Phase 4 — testing (see below)
+### Phase 4 — testing — **core behaviour verified 2026-08-26**
+
+Rows 1, 2, 4, 5 and 6 of §6 pass in a real save. See §0 for the evidence table and for what
+is still unrun.
 
 ### Phase 5 — publish
 
@@ -597,6 +598,14 @@ of what the player actually sees has to run with it off.
    rather than an oversight.
 
 ### Settled — do not reopen without a reason
+
+- **Keep the `requiredAnalyzed` fix (2026-08-26).** Change 2 checks all four unlock gates,
+  which stops vanilla generating schematics for chip-locked research — `WastepackAtomizer`
+  being the visible case (§2a). This *is* a deliberate deviation from vanilla behaviour and
+  was confirmed as wanted. Do not add a compatibility toggle for it unless someone asks:
+  it falls straight out of "only generate books for research that is unlocked", and
+  special-casing it back would mean re-introducing the exact inconsistency the mod exists
+  to remove.
 
 - **RimWorld 1.5 support: no.** 1.6 only (decided 2026-08-26). `supportedVersions` in
   `About/About.xml` is correct as it stands; don't add a 1.5 entry or a 1.5 load folder.
