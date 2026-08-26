@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+
+  <!-- BookOutcomeProperties_GainResearch.include, when non-empty, replaces the whole
+       candidate pool. ReadingOutcomeDoerGainResearch.OnBookGenerated still runs IsValid on
+       each entry, and falls back to the normal pool if none survive - which is exactly what
+       makes this a clean pass/fail signal.
+
+       Note the include path does NOT test PrerequisitesCompleted, so this works on a brand
+       new colony with no research done. -->
+
+  <Operation Class="PatchOperationAdd">
+    <xpath>/Defs/ThingDef[defName="Schematic"]/comps/li[@Class="CompProperties_Book"]/doers/li[@Class="BookOutcomeProperties_GainResearch"]</xpath>
+    <value>
+      <include>
+        <BasicMechtech    MayRequire="Ludeon.RimWorld.Biotech"/>
+        <StandardMechtech MayRequire="Ludeon.RimWorld.Biotech"/>
+        <HighMechtech     MayRequire="Ludeon.RimWorld.Biotech"/>
+        <UltraMechtech    MayRequire="Ludeon.RimWorld.Biotech"/>
+        <BasicGravtech    MayRequire="Ludeon.RimWorld.Odyssey"/>
+        <StandardGravtech MayRequire="Ludeon.RimWorld.Odyssey"/>
+        <AdvancedGravtech MayRequire="Ludeon.RimWorld.Odyssey"/>
+      </include>
+    </value>
+  </Operation>
+
+</Patch>

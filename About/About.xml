@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <packageId>VitaKaninen.UnlockedSchematics</packageId>
+  <name>Unlocked Schematics</name>
+  <author>VitaKaninen</author>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Research schematics are never generated for a handful of research projects that vanilla hides behind a second unlock step - the Biotech mechtech line, the Odyssey gravtech line, and every Royalty project that needs a techprint.
+
+This mod lets schematics generate for those projects too. The unlock requirement itself is untouched: a pawn can read a schematic and bank research progress toward a gated project, but the project still cannot be completed at the bench until the techprint is applied, a mechanitor joins the colony, or a grav engine is inspected.
+
+TEST BUILD - this build contains the def patch only (mechtech + gravtech). The techprint patch and the research-gate safeguard are not included yet, so a schematic read to 100% CAN currently complete a gated project. Not intended for a real playthrough.</description>
+</ModMetaData>

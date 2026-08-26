@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+
+  <!-- The Schematic ThingDef carries a hand-written blocklist of research projects that
+       may never become a schematic: the four Biotech mechtech projects and the three
+       Odyssey gravtech projects. It is plain def data, not a gameplay rule - nothing in
+       ReadingOutcomeDoerGainResearch.IsValid ever reads requiresMechanitor or
+       requireGravEngineInspected. Removing the list lets schematics generate for them.
+
+       The real gates live in ResearchProjectDef.CanStartNow and are untouched by this
+       patch, so the bench still refuses the project until the requirement is met. -->
+
+  <Operation Class="PatchOperationRemove">
+    <xpath>/Defs/ThingDef[defName="Schematic"]/comps/li[@Class="CompProperties_Book"]/doers/li[@Class="BookOutcomeProperties_GainResearch"]/exclude</xpath>
+  </Operation>
+
+</Patch>

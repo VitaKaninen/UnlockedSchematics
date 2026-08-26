@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+.claude
+.vscode
+CLAUDE.md
+.rimignore
+PLAN.md
+*-brief.md
+Source
+obj
+bin
+Dev

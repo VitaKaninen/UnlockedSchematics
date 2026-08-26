@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <packageId>VitaKaninen.UnlockedSchematics.TestOnly</packageId>
+  <name>ZZZ Unlocked Schematics - TEST HARNESS (disable after testing)</name>
+  <author>VitaKaninen</author>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Temporary test harness for Unlocked Schematics. NOT a playable mod - disable it once the test is done.
+
+It forces every generated schematic to draw from the seven blocklisted projects only (four Biotech mechtech, three Odyssey gravtech), turning a lucky-sample test into a binary one:
+
+  every schematic is mechtech/gravtech  -> the blocklist removal worked
+  schematics are ordinary projects      -> it did not; the game fell back to the normal pool
+
+Enable alongside Unlocked Schematics. Load order between the two does not matter.</description>
+</ModMetaData>
