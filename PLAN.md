@@ -636,7 +636,7 @@ of what the player actually sees has to run with it off.
 
 - **RimWorld 1.5 support: no.** 1.6 only (decided 2026-08-26). `supportedVersions` in
   `About/About.xml` is correct as it stands; don't add a 1.5 entry or a 1.5 load folder.
-- **GitHub remote: not yet.** See Phase 0 step 3.
+- **GitHub remote: created 2026-08-26.** `VitaKaninen/UnlockedSchematics`, pushing to `main`.
 - **`packageId` and `.rimignore`: done.** `Vita.UnlockedSchematics`, matching
   CarryCapacityFromBionics; `.rimignore` covers `PLAN.md`, `*-brief.md`, `Source`, `Dev`.
 
