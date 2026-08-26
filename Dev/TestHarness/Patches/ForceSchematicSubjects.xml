@@ -1,13 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Patch>
 
-  <!-- BookOutcomeProperties_GainResearch.include, when non-empty, replaces the whole
-       candidate pool. ReadingOutcomeDoerGainResearch.OnBookGenerated still runs IsValid on
-       each entry, and falls back to the normal pool if none survive - which is exactly what
-       makes this a clean pass/fail signal.
+  <!-- ============================================================================
+       1. DIRECT READ-OUT.  Does not depend on generating any books at all.
 
-       Note the include path does NOT test PrerequisitesCompleted, so this works on a brand
-       new colony with no research done. -->
+       Tests whether the blocklist node still exists after Unlocked Schematics has had
+       its turn, and writes the answer onto the Schematic item's label. Spawn one
+       schematic and read its name:
+
+         schematic [OK - blocklist removed]        main patch applied
+         schematic [FAIL - blocklist still here]   main patch did NOT apply
+         schematic                                 this harness is not applied either,
+                                                   so neither mod is doing anything
+
+       LOAD ORDER MATTERS for this operation: patches run in mod load order, so this
+       harness must sit BELOW Unlocked Schematics in the mod list. Above it, the
+       blocklist has not been removed yet and it will read FAIL every time.
+       ============================================================================ -->
+
+  <Operation Class="PatchOperationConditional">
+    <xpath>/Defs/ThingDef[defName="Schematic"]/comps/li[@Class="CompProperties_Book"]/doers/li[@Class="BookOutcomeProperties_GainResearch"]/exclude</xpath>
+    <match>
+      <Operation Class="PatchOperationReplace">
+        <xpath>/Defs/ThingDef[defName="Schematic"]/label</xpath>
+        <value>
+          <label>schematic [FAIL - blocklist still here]</label>
+        </value>
+      </Operation>
+    </match>
+    <nomatch>
+      <Operation Class="PatchOperationReplace">
+        <xpath>/Defs/ThingDef[defName="Schematic"]/label</xpath>
+        <value>
+          <label>schematic [OK - blocklist removed]</label>
+        </value>
+      </Operation>
+    </nomatch>
+  </Operation>
+
+  <!-- ============================================================================
+       2. SUBJECT FORCING.  Secondary confirmation, via generated books.
+
+       BookOutcomeProperties_GainResearch.include, when non-empty, replaces the whole
+       candidate pool. OnBookGenerated still runs IsValid on each entry.
+
+       Caveat that makes this weaker than the read-out above: if every entry fails
+       IsValid the list comes out empty and OnBookGenerated falls back to scanning all
+       projects - a branch that skips BOTH the IsFinished and PrerequisitesCompleted
+       checks. So the fail mode looks like "an odd mix including already-researched and
+       unreachable projects", which a fully-researched colony can also produce on its
+       own. Use operation 1 to tell those apart.
+
+       The include branch skips PrerequisitesCompleted, so this works on a brand new
+       colony with no research done.
+       ============================================================================ -->
 
   <Operation Class="PatchOperationAdd">
     <xpath>/Defs/ThingDef[defName="Schematic"]/comps/li[@Class="CompProperties_Book"]/doers/li[@Class="BookOutcomeProperties_GainResearch"]</xpath>

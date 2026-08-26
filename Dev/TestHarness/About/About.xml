@@ -8,10 +8,14 @@
   </supportedVersions>
   <description>Temporary test harness for Unlocked Schematics. NOT a playable mod - disable it once the test is done.
 
-It forces every generated schematic to draw from the seven blocklisted projects only (four Biotech mechtech, three Odyssey gravtech), turning a lucky-sample test into a binary one:
+MUST LOAD BELOW Unlocked Schematics in the mod list. Patches run in load order; above it, the read-out below reports FAIL every time regardless of the truth.
 
-  every schematic is mechtech/gravtech  -> the blocklist removal worked
-  schematics are ordinary projects      -> it did not; the game fell back to the normal pool
+It writes the test result straight onto the Schematic item's label, so you only need to spawn one schematic and read its name:
 
-Enable alongside Unlocked Schematics. Load order between the two does not matter.</description>
+  schematic [OK - blocklist removed]        the main patch applied
+  schematic [FAIL - blocklist still here]   the main patch did NOT apply
+  schematic                                 this harness is not applied either, so
+                                            neither mod is doing anything
+
+It also forces the schematic candidate pool to the seven blocklisted projects, as a second confirmation via generated books. That signal is weaker on its own: when every candidate fails the eligibility check the pool comes out empty and the game falls back to scanning all projects, ignoring both the "already researched" and "prerequisites met" filters. The fail mode therefore looks like an odd mix of researched and unreachable subjects - which a fully-researched colony can produce by itself. The label read-out is what tells those apart.</description>
 </ModMetaData>
