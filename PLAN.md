@@ -290,6 +290,39 @@ techprint, selects the project, and one tick at the bench finishes it.
 All 20 declare no `<tab>`, so they default to `Main` and pass condition (d). All 20 have
 `generalRules`, so they pass (a). All have `baseCost > 0`, so they pass (c).
 
+### The pool is smaller than 20 at any given moment
+
+Unblocking a project does not make it a book subject — `OnBookGenerated`'s main loop also
+requires `PrerequisitesCompleted && !IsFinished`. Six of the 20 wait on a prerequisite that
+is itself gated, so they only become eligible after the one before them is finished:
+
+| Not yet eligible | Waiting on |
+|---|---|
+| StandardMechtech / HighMechtech / UltraMechtech | the previous mechtech tier |
+| StandardGravtech / AdvancedGravtech | the previous gravtech tier |
+| VenomSynthesis | CompactWeaponry (itself techprint-gated) |
+
+**Validated against a real save, 2026-08-26.** On a colony with every ungated project
+finished bar one, the model predicts exactly one eligible subject with the mod off
+(`WastepackAtomizer`) and 15 with it on. The player observed exactly that — one book type
+off, the rest on. Reproduce with:
+
+```bash
+python Dev/simulate_pool.py "<RimWorld>/Data" --finished-all-ungated --unfinished WastepackAtomizer
+```
+
+The `--unfinished` list has to be supplied by hand: whether an ungated project is done
+depends on the colony (a missing MultiAnalyzer, or nobody bothering), and nothing in the
+defs reveals it.
+
+`WastepackAtomizer` is worth knowing about as a red herring: it lives in
+`Biotech/.../ResearchProjects_Mechanitor.xml` and so looks mech-gated, but it inherits
+nothing from `MechtechBase` and has no techprint. It is an ordinary project costing 8000
+and needing a Hi-Tech bench plus a MultiAnalyzer — commonly the last ungated project left
+unresearched, which is exactly why it was the lone survivor. Note also that `IsValid` never
+consults `CanStartNow`, so a project the player *cannot currently research* is still a
+valid book subject.
+
 **Deliberately out of scope:**
 
 - The 40 zero-`baseCost` Anomaly projects. They are excluded by conditions (c) and (d),
