@@ -642,6 +642,44 @@ of what the player actually sees has to run with it off.
 
 ---
 
+## 7a. Reading priority — investigated 2026-08-26, nothing to build
+
+**Vanilla already prioritises books that still have something to give.** Do not build a
+"make pawns prefer unresearched schematics" feature; it exists.
+
+`BookUtility.TryGetRandomBookToRead` is the only selection path — both `JoyGiver_Read`
+(recreation) and `LearningGiver_Reading` (children) call it, and there is no third. It
+builds two pools and prefers the first:
+
+    candidates        every book passing IsValidBook (reachable, reservable, unforbidden,
+                      reading-policy-allowed, not fogged, vacuum- and politics-safe)
+    outcomeCandidates those where Book.ProvidesOutcome(pawn) is true
+    pick              outcomeCandidates.Any() ? outcomeCandidates.RandomElement()
+                                              : candidates.RandomElement()
+
+`ReadingOutcomeDoerGainResearch.DoesProvidesOutcome` returns true only while at least one
+of the book's projects is `!IsFinished`, so an exhausted schematic is already demoted.
+`values` survives save/load via `PostExposeData`, so this does not decay.
+
+Confirmed in play 2026-08-26, vanilla and with the user's book/recreation mods loaded.
+
+Three things that look like the feature is missing but are not bugs:
+
+- **The preferred pool is "any outstanding benefit", not "outstanding research".** A
+  `TextBook` qualifies while the reader's skill is below its quality cap, and the pick is
+  uniform, so schematics compete with textbooks. Biasing that means tilting between book
+  types — rejected: players control the mix by choosing what to stock, and modded book
+  types (children's, colouring) would be collateral.
+- **A schematic holds 1 project 75% of the time and 2 the other 25%**
+  (`Rand.Chance(0.25f)` in `OnBookGenerated`). A part-used two-project book ranks as
+  equal to a fresh one. Accepted as vanilla.
+- **Nothing ends a read when the book goes stale mid-session.** The reading toil's only
+  end condition is `BookUtility.CanReadBook`; `CheckForJobOverride(9.1f)` yields to more
+  important *work*, never to a better book. Deliberately not fixed — pawns finish when
+  they finish and re-pick next time.
+
+---
+
 ## 8. Reproducing the source investigation
 
 The decompile lives in this session's scratchpad, not in the repo — decompiled Ludeon code

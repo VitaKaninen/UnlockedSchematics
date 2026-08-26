@@ -63,6 +63,13 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   The book saves the chip you'd consume on analysis, not the one the building eats. Same
   for mechtech: unlocked with no mechanitor, it unlocks defs a mechanitor has to operate.
   Check the material and usability costs before calling a research bypass exploitable.
+- **Pawns already prefer books that still have something to give — don't build that.**
+  `BookUtility.TryGetRandomBookToRead` (the only selection path, used by both
+  `JoyGiver_Read` and `LearningGiver_Reading`) picks from books where
+  `ProvidesOutcome` holds and falls back to all books only when none do, and a
+  schematic stops providing an outcome once every project in it is finished.
+  Investigated and declined 2026-08-26 — including why textbook competition is not
+  worth fixing. Read PLAN.md §7a before re-opening it.
 - **This mod deliberately does not fix that.** It gates *generation* only. A book that
   already exists stays readable and can still finish locked research — that is vanilla
   behaviour and it is wanted (PLAN.md §2). A clamp on `AddProgress` was written for the
