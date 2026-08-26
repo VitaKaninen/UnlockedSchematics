@@ -1,5 +1,11 @@
 # Schematics Unlocked — Project Brief
 
+> **Superseded — historical record only.** Written before the source was read. Its open
+> questions 1-6 are all answered in [PLAN.md](PLAN.md), and several of its guesses turned
+> out wrong: the mechanitor and grav-engine blocks are a hand-written `<exclude>` list in
+> the `Schematic` ThingDef, not code that reads `requiresMechanitor` or
+> `requireGravEngineInspected`. Read PLAN.md instead.
+
 ## What the mod does
 
 Research schematics — books that grant research progress when read — are only

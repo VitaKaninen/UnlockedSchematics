@@ -1,8 +1,47 @@
 # Unlocked Schematics — Implementation Plan
 
-Supersedes the open questions in `Schematics Unlocked-brief.md`. Findings below are read
+Supersedes the open questions in `UnlockedSchematics-brief.md`. Findings below are read
 from decompiled `Assembly-CSharp.dll`, **RimWorld 1.6.4871 rev590**, plus the shipped def
 XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
+
+---
+
+## 0. State of play — start here
+
+**Last updated 2026-08-26.** This file is the handoff; there is no separate handoff doc.
+
+| | |
+|---|---|
+| Change 1 — XML, mechtech + gravtech | **done and verified in game** |
+| Change 2 — Harmony, techprints | not started |
+| Change 3 — Harmony, gate clamp | not started |
+
+**Verified 2026-08-26:** with `Dev/TestHarness` loaded below the mod, every generated
+schematic was a mechtech or gravtech subject, and the harness label read
+`schematic (OK - blocklist removed)`. That confirms the `<exclude>` removal applies and
+that those seven projects now reach the candidate pool. It does **not** yet test that the
+gates still hold — that is Change 3's job.
+
+**Next action:** Phase 3. Changes 2 and 3 must ship in the same build; see §2 for why
+shipping Change 2 alone would let a reader complete a techprint-gated project outright.
+
+### Cleanup owed before release
+
+- `Dev/TestHarness` is installed as a separate mod at
+  `RimWorld/Mods/UnlockedSchematics_TESTONLY` and is currently **enabled** in the mod list.
+  Disable and delete it before any real playthrough — it forces every schematic to one of
+  seven subjects and rewrites the Schematic label.
+- `About/About.xml` still carries a `TEST BUILD` paragraph in its description. Remove it
+  once Changes 2 and 3 land.
+- `supportedVersions` is 1.6 only. Decide on 1.5 (see §7).
+
+### Environment notes for the next session
+
+- The decompiled source is **not** in this repo and must not be committed. Regenerate with
+  the `ilspycmd` command in `CLAUDE.md`; `Dev/validate_patches.py` takes its path as an
+  argument.
+- Run `Dev/validate_patches.py` before trusting any patch XML. It catches things an XML
+  parser and an XPath test both miss — two bugs this session got past both.
 
 ---
 
@@ -303,7 +342,7 @@ one) but `Managed/` contains `netstandard.dll`, i.e. the .NET 4.x profile. `net4
 the `Krafs.Rimworld.Ref` + `Lib.Harmony` NuGet packages is the community standard for
 1.5/1.6 — confirm on first build rather than taking it on trust.
 
-### Phase 2 — Change 1, verify in isolation — **built, awaiting in-game test**
+### Phase 2 — Change 1, verify in isolation — **done, verified in game 2026-08-26**
 
 XML only, no assembly yet, so a failure here is unambiguously the def half. Installed to
 `RimWorld/Mods/UnlockedSchematics`; `Dev/TestHarness` installed alongside as
@@ -316,6 +355,28 @@ applies it, which is what the in-game test is for.
 Test: dev mode -> debug output -> Text generation -> Books -> Schematic (generates 30 and
 logs them). With the harness on, every result should be a mechtech or gravtech subject.
 For an exact project name, spawn a Schematic and open its info card.
+
+**Result:** pass. Every schematic came back mechtech or gravtech, and the harness label
+read `schematic (OK - blocklist removed)`.
+
+It took three attempts to get there, and none of the failures were in the mod itself —
+worth knowing, because the same traps are waiting in Phase 3:
+
+1. Only the harness was enabled. Alone it sets `include` to seven projects that all still
+   fail `IsValid`, so the pool empties and `OnBookGenerated` falls back to scanning every
+   project while skipping the `IsFinished` *and* `PrerequisitesCompleted` filters. The
+   output looks like a plausible random assortment, so a sampling test cannot tell this
+   apart from "the patch is broken". That is why the harness now writes its verdict onto
+   the item label instead.
+2. The harness's `PatchOperationConditional` nested `<Operation Class="...">` inside
+   `<match>`, leaving that node class-less. RimWorld built the abstract base
+   `PatchOperation` and logged "Attempted to use PatchOperation directly; patch will always
+   fail" in either load order.
+3. The label used `[ ]`, which `Def.DisallowedLabelCharsRegex` rejects.
+
+Bugs 2 and 3 both parse as valid XML and both target the right node, so the XPath
+simulation used before the first test said "PASS" on each. `Dev/validate_patches.py` was
+written afterwards and catches both; run it before trusting patch XML.
 
 ### Phase 3 — Changes 2 and 3
 
