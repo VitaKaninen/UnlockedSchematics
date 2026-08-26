@@ -55,8 +55,14 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   reaches `Cost`, whether or not `FinishProject` ran. `AnalyzedThingsRequirementsMet`
   appears in exactly two places in the assembly (`CanStartNow` and the research tab UI) and
   in neither unlock path. **Consequence, true in vanilla with no mods:** reading a wastepack
-  atomizer book to 100% makes the atomizer buildable without ever studying the
-  NanostructuringChip.
+  atomizer book to 100% completes research the bench refuses to start, with the
+  NanostructuringChip never studied. Verified in play 2026-08-26.
+- **But don't overstate that — finishing the research is not the binding constraint.** The
+  atomizer's `costList` still demands a physical `NanostructuringChip`, and analysing a
+  chip needs a mechanitor (`CompProperties_CompAnalyzableUnlockResearch.requiresMechanitor`).
+  The book saves the chip you'd consume on analysis, not the one the building eats. Same
+  for mechtech: unlocked with no mechanitor, it unlocks defs a mechanitor has to operate.
+  Check the material and usability costs before calling a research bypass exploitable.
 - **This mod deliberately does not fix that.** It gates *generation* only. A book that
   already exists stays readable and can still finish locked research — that is vanilla
   behaviour and it is wanted (PLAN.md §2). A clamp on `AddProgress` was written for the

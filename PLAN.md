@@ -180,10 +180,29 @@ for (int i = 0; i < researchPrerequisites.Count; i++)
 `AnalyzedThingsRequirementsMet` appears in exactly **two** places in the whole assembly:
 `CanStartNow`, and the research tab's UI colouring. Nothing in the unlock path consults it.
 
-**So in vanilla, reading a wastepack atomizer book to 100% makes the atomizer buildable
-without the NanostructuringChip ever being studied.** The bench refuses to start that
-research; a book finishes it anyway. This is vanilla's behaviour, reachable today with no
-mods, and it is a bigger deal than the wasted book slot that made us notice it.
+**So in vanilla, reading a wastepack atomizer book to 100% completes research the bench
+flatly refuses to start.** No mods required. Confirmed in play 2026-08-26.
+
+### …but the consequences are smaller than they look
+
+An earlier draft of this section called that "a bigger deal than the wasted book slot".
+That was wrong, and testing showed why: **finishing the research is not the binding
+constraint on actually using the tech.**
+
+| Gate | Where it lives | Bypassed by the book? |
+|---|---|---|
+| Research completion | `requiredAnalyzed` -> `NanostructuringChip` | **yes** |
+| Building the atomizer | its `costList`: Steel 200, Plasteel 50, **NanostructuringChip 1** | no — a material cost |
+| Analysing a chip at all | `CompProperties_CompAnalyzableUnlockResearch.requiresMechanitor` | no |
+
+The building still costs a physical NanostructuringChip, and analysing a chip requires a
+mechanitor regardless. So the book saves you the chip you would have consumed on analysis —
+not the one the building eats. The same holds for mechtech: research completed with no
+mechanitor in the colony unlocks defs that need a mechanitor to be worth anything.
+
+**This is why the mod leaves the behaviour alone.** It is vanilla, it is bounded by
+material and usability costs, and treating it as a bug to fix would mean second-guessing
+Ludeon's economy from inside a mod about book generation.
 
 ### Why the mod does not "fix" this
 
