@@ -27,8 +27,12 @@
     <!-- Publicized RimWorld reference assemblies. Reference-only: never shipped. -->
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" ExcludeAssets="runtime" PrivateAssets="all" />
 
-    <!-- Harmony comes from the Harmony mod at runtime, so compile against it but do not copy it. -->
-    <PackageReference Include="Lib.Harmony" Version="2.4.2" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- Harmony comes from the Harmony mod at runtime, so compile against it but do not copy it.
+         2.4.1, not the newer 2.4.2, because 2.4.1 is the library the Harmony mod actually ships
+         (its own mod version reads 2.4.2, which is a separate version line - see PLAN.md Phase 3).
+         Reference *versions* bind loosely, but missing *members* do not: compiling against a
+         newer Harmony than the one loaded is how you earn a MissingMethodException at startup. -->
+    <PackageReference Include="Lib.Harmony" Version="2.4.1" ExcludeAssets="runtime" PrivateAssets="all" />
 
     <!-- Lets net472 build on a machine with no Visual Studio targeting pack installed. -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />

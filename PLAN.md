@@ -413,16 +413,30 @@ Writes straight to `Assemblies/UnlockedSchematics.dll`. Built with dotnet SDK 10
 reproducibility: `Krafs.Rimworld.Ref` 1.6.4871 (exactly the installed game build) and
 `Lib.Harmony` 2.4.2.
 
-The pins do not have to match what the game loads, and in fact they don't. The Harmony
-**mod** is version 2.4.2.0, but the **library** it ships — `Current/Assemblies/0Harmony.dll`
-— is stamped 2.4.1.0; the 2.4.2 release bumped `HarmonyMod.dll` and the manifest without
-rebuilding the library's assembly version. So our reference to `0Harmony 2.4.2.0` resolves
-against a 2.4.1.0 binary at runtime.
+**The Harmony mod's version and the Harmony library's version are separate version lines
+that collide numerically.** Do not read one as the other:
 
-That is harmless: both `0Harmony` and `Assembly-CSharp` are built **without a strong name**
-(`PublicKeyToken` is null), so the runtime binds them by simple name and ignores the
-version entirely — verified by reflection, not assumed. This is also why any 1.6.x game
-build accepts an assembly compiled against ref 1.6.4871.
+| | Version | Released |
+|---|---|---|
+| HarmonyRimWorld **mod** (what the mod manager shows) | 2.4.2.0 | 2025-09-03 |
+| `Current/Assemblies/0Harmony.dll`, the **library** it ships | 2.4.1.0 | 2025-08-22 |
+| Harmony **library** 2.4.2.0 | 2.4.2.0 | **2025-11-13** |
+
+The mod's 2.4.2.0 predates the library's 2.4.2.0 by two months, so this is not a stale or
+un-rebuilt library — the mod bundled the newest library that existed when it shipped. Its
+own version simply counts independently. Verified against Pardeike's repos via the commit
+SHA embedded in each DLL's `ProductVersion`: the shipped `0Harmony.dll` is built from
+`789df191`, exactly one commit before the `v2.4.1.0` tag — a CI build taken just before
+tagging.
+
+**So `Lib.Harmony` is pinned to 2.4.1, matching the library actually loaded, not 2.4.2.**
+Reference *versions* bind loosely — `0Harmony` and `Assembly-CSharp` are both built without
+a strong name (`PublicKeyToken` is null), so the runtime resolves by simple name and ignores
+the version, verified by reflection rather than assumed. But missing *members* do not bind
+loosely: compiling against a newer Harmony than the one loaded is how you earn a
+`MissingMethodException` at startup. The loose binding is what makes ref 1.6.4871 work
+against any 1.6.x game build; it is not a licence to compile against API that will not be
+there.
 
 Build-time verification done: 0 warnings; both patch classes decompiled back out of the
 built DLL to confirm the attributes and `AccessTools` lookup are what was intended;
