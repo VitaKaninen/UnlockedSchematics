@@ -88,8 +88,19 @@ def check_node(node, types, path, problems):
                 f"(valid: {', '.join(sorted(allowed))})")
 
 
+# Def.DisallowedLabelCharsRegex - these break grammar resolution and raise a config error
+# unless the def sets ignoreIllegalLabelCharacterConfigError.
+BAD_LABEL_CHARS = re.compile(r"[\[\]{}]")
+
+
 def walk(node, types, path, problems):
     check_node(node, types, path, problems)
+    if node.tag == "label" and node.text and BAD_LABEL_CHARS.search(node.text):
+        bad = "".join(sorted(set(BAD_LABEL_CHARS.findall(node.text))))
+        problems.append(
+            f"{path}: <label> contains disallowed character(s) '{bad}'. RimWorld allows "
+            f"anything except []{{}} - use parentheses, or set "
+            f"ignoreIllegalLabelCharacterConfigError on the def.")
     for child in node:
         # A child mapped to a PatchOperation-typed field must carry Class itself.
         if child.tag in ("match", "nomatch") and child.get("Class") is None:

@@ -8,8 +8,8 @@
        its turn, and writes the answer onto the Schematic item's label. Spawn one
        schematic and read its name:
 
-         schematic [OK - blocklist removed]        main patch applied
-         schematic [FAIL - blocklist still here]   main patch did NOT apply
+         schematic (OK - blocklist removed)        main patch applied
+         schematic (FAIL - blocklist still here)   main patch did NOT apply
          schematic                                 this harness is not applied either,
                                                    so neither mod is doing anything
 
@@ -29,13 +29,13 @@
     <match Class="PatchOperationReplace">
       <xpath>/Defs/ThingDef[defName="Schematic"]/label</xpath>
       <value>
-        <label>schematic [FAIL - blocklist still here]</label>
+        <label>schematic (FAIL - blocklist still here)</label>
       </value>
     </match>
     <nomatch Class="PatchOperationReplace">
       <xpath>/Defs/ThingDef[defName="Schematic"]/label</xpath>
       <value>
-        <label>schematic [OK - blocklist removed]</label>
+        <label>schematic (OK - blocklist removed)</label>
       </value>
     </nomatch>
   </Operation>

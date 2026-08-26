@@ -34,6 +34,10 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   directly; patch will always fail"*. `<li Class="...">` inside a `List<PatchOperation>`
   (e.g. `PatchOperationSequence.operations`) is the different, correct case — don't
   generalise from it. Cost a test cycle 2026-08-26; `Dev/validate_patches.py` now catches it.
+- **Labels may not contain `[ ] { }`.** `Def.DisallowedLabelCharsRegex` rejects only
+  those four; they break grammar resolution and raise a config error unless the def sets
+  `ignoreIllegalLabelCharacterConfigError`. Parentheses are fine — prefer them over the
+  flag for temporary test labels. `Dev/validate_patches.py` checks this.
 - **A patch that parses and whose XPath matches can still be wrong.** Simulating the XPath
   against the shipped def proves only that the *target* is right, never that the XML binds
   to the C# fields. Those are separate failure modes and need separate checks.

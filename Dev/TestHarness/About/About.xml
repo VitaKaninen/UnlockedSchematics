@@ -12,8 +12,8 @@ MUST LOAD BELOW Unlocked Schematics in the mod list. Patches run in load order; 
 
 It writes the test result straight onto the Schematic item's label, so you only need to spawn one schematic and read its name:
 
-  schematic [OK - blocklist removed]        the main patch applied
-  schematic [FAIL - blocklist still here]   the main patch did NOT apply
+  schematic (OK - blocklist removed)        the main patch applied
+  schematic (FAIL - blocklist still here)   the main patch did NOT apply
   schematic                                 this harness is not applied either, so
                                             neither mod is doing anything
 
