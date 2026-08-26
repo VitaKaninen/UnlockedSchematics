@@ -25,21 +25,25 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 | Studied a grav engine → BasicGravtech schematics start appearing | `InspectionRequirementsMet` gate works |
 | Applied a techprint → that project's schematics start appearing | `TechprintRequirementMet` gate works, and clause (e) is successfully neutralised |
 
-That is test plan §6 rows 1, 2, 4, 5 and 6 passing. It exercises both directions of Change
-2 — nothing locked gets through, and each gate opens the moment it is satisfied.
+| Mechanitor died → mechtech subjects stop generating again | The gate re-locks symmetrically, matching vanilla's own re-locking of the research |
 
-**Still untested:** row 7, the only remaining path into Change 3 — generate a mechtech
-schematic, then let the colony's only mechanitor die, then read it. Needs deliberate
-setup. Rows 8 (bench-research regression) and 10 (pre-mod save) are also unrun, though row
-8 is guarded by code: `AddProgress` has exactly one caller in the whole assembly (§2).
+That is test plan §6 rows 1, 2, 4, 5 and 6 passing, plus the generation half of row 7. It
+exercises both directions of Change 2 — nothing locked gets through, each gate opens the
+moment it is satisfied, and each closes again if it lapses.
+
+**Change 3 is still untested, and the mechanitor-death test did not cover it.** That test
+showed generation stopping, which is Change 2. The clamp only fires on a book that *already
+exists* being read after its gate lapses — generate a mechtech schematic first, *then* let
+the mechanitor die, then read that book. Progress should park below 100%.
+
+Rows 8 (bench-research regression) and 10 (pre-mod save) are also unrun, though row 8 is
+guarded by code: `AddProgress` has exactly one caller in the whole assembly (§2).
 
 ### Cleanup owed before release
 
-- `Dev/TestHarness` is installed as a separate mod at
-  `RimWorld/Mods/UnlockedSchematics_TESTONLY`. Disable and delete it before any real
-  playthrough — it replaces the candidate pool and rewrites the Schematic label. It has
-  done its job (it proved Change 1 applies) and is now actively misleading: leaving it on
-  is what produced the unreadable result in §6a.
+- ~~`Dev/TestHarness`~~ — **deleted 2026-08-26**, both the repo copy and the
+  `RimWorld/Mods/UnlockedSchematics_TESTONLY` install. It had done its job and had become
+  misleading (§6a). Rationale kept in `Dev/README.md`; recoverable from git history.
 - `About/Preview.png` does not exist yet. Steam Workshop wants one before publishing.
 
 ### Environment notes for the next session
@@ -430,8 +434,8 @@ UnlockedSchematics/
       Patch_ResearchGateClamp.cs
   Dev/
     README.md
-    validate_patches.py
-    TestHarness/           separate throwaway mod, forces schematic subjects for testing
+    validate_patches.py    patch XML checks an XPath test misses
+    simulate_pool.py       predicts the schematic candidate pool from the shipped defs
   .rimignore
   .gitignore
   CLAUDE.md
@@ -547,11 +551,12 @@ Steam Workshop under `VitaKaninen`. Commit and push per the folder rules.
 
 Dev mode, Royalty + Biotech + Odyssey enabled.
 
-**Disable `Dev/TestHarness` for every test below.** Its `include` list replaces the whole
-candidate pool, and the include branch skips the `PrerequisitesCompleted` check the normal
-branch applies — which is exactly what produced the confusing 2026-08-26 result (see §6a).
+Predict each expected column with `Dev/simulate_pool.py` before looking in game — comparing
+an observation against a prediction is what turned §6a from a mystery into a five-minute
+diagnosis.
 
-Predict each expected column with `Dev/simulate_pool.py` before looking in game.
+The test harness that muddied the first round has been deleted; if anyone rebuilds one,
+read the warning in `Dev/README.md` first.
 
 | # | Test | Expected |
 |---|---|---|

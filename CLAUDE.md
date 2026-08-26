@@ -42,9 +42,13 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   "mod not enabled".** Both empty the candidate pool, and `OnBookGenerated`'s fallback
   branch then scans every project while skipping the `IsFinished` *and*
   `PrerequisitesCompleted` filters — which also happens naturally on a fully-researched
-  colony. `Dev/TestHarness` writes the answer onto the item label instead; prefer that.
-- **The test harness must load *after* this mod.** Patches apply in mod load order, so
-  above it the harness reads the blocklist before removal and always reports FAIL.
+  colony. Predict the pool with `Dev/simulate_pool.py` and compare, rather than eyeballing
+  a sample.
+- **Don't test with a mod that replaces the candidate pool.** A harness using
+  `BookOutcomeProperties_GainResearch.include` replaces the pool wholesale, and the include
+  branch of `OnBookGenerated` skips the `PrerequisitesCompleted` check the normal branch
+  applies — so it yields subjects whose prerequisites are unresearched, which reads exactly
+  like a mod bug. Cost a full round of confusion 2026-08-26; see PLAN.md §6a.
 - **`ResearchProjectDef.IsFinished` is `ProgressReal >= Cost`, and nothing else.**
   Recipes and buildings test it directly, so a project is effectively unlocked the moment
   progress reaches `Cost` — whether or not `FinishProject` ran. Any "bank progress but keep
