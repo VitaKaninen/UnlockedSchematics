@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <packageId>VitaKaninen.UnlockedSchematics.TestOnly</packageId>
+  <packageId>Vita.UnlockedSchematics.TestOnly</packageId>
   <name>ZZZ Unlocked Schematics - TEST HARNESS (disable after testing)</name>
   <author>VitaKaninen</author>
   <supportedVersions>
