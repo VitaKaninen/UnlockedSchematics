@@ -17,9 +17,9 @@ In vanilla, schematics only spawn for research that is not locked behind a techp
 mechanitor, or a grav engine. Those topics never produce a book — not before you unlock
 them, and not after.
 
-That is a real problem if you want to run a research-less colony and unlock technology
-through schematics instead: a large portion of the game's content is permanently out of
-reach.
+That matters if research is not how your colony advances — forbidden by your ideoligion,
+slowed to a crawl by your scenario, or simply not how you want to play. When schematics are
+your route to new technology, a large part of the game's content is permanently out of reach.
 
 This mod fixes that. Schematics spawn for those topics as soon as your colony meets the
 requirement — the techprint is applied, a mechanitor joins, a grav engine is inspected.
@@ -43,9 +43,9 @@ In vanilla, schematics only spawn for research that is not locked behind a techp
 mechanitor, or a grav engine. Those topics never produce a book — not before you unlock
 them, and not after.
 
-That is a real problem if you want to run a research-less colony and unlock technology
-through schematics instead: a large portion of the game's content is permanently out of
-reach.
+That matters if research is not how your colony advances — forbidden by your ideoligion,
+slowed to a crawl by your scenario, or simply not how you want to play. When schematics are
+your route to new technology, a large part of the game's content is permanently out of reach.
 
 This mod fixes that. Schematics spawn for those topics as soon as your colony meets the
 requirement — the techprint is applied, a mechanitor joins, a grav engine is inspected.
