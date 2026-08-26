@@ -8,8 +8,19 @@ namespace UnlockedSchematics
     /// <summary>
     /// Change 3 - keep a gated project's banked progress strictly below its cost.
     ///
-    /// This is the half that preserves the gate, and it is not optional. ResearchManager
-    /// .AddProgress ends with:
+    /// Since Change 2 only lets a schematic be generated for research whose gates are
+    /// already satisfied, this no longer carries the design on its own. It is the backstop
+    /// for the case Change 2 cannot cover: a gate that lapses *after* the book exists. The
+    /// obvious one is the colony's only mechanitor dying - PlayerMechanitorRequirementMet
+    /// goes false again, but the book's values dictionary still names the mechtech project
+    /// and OnReadingTick keeps feeding it. Without this, a pawn could finish mechtech
+    /// research for a colony that no longer has a mechanitor.
+    ///
+    /// It stays cheap - one early return when nothing is outstanding - and it guards every
+    /// future path into AddProgress, so it is worth keeping even though the common case no
+    /// longer reaches it.
+    ///
+    /// ResearchManager.AddProgress ends with:
     ///
     ///     progress[proj] = Mathf.Min(progress[proj], proj.Cost);
     ///     if (proj.PrerequisitesCompleted &amp;&amp; proj.IsFinished)

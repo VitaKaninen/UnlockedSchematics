@@ -83,8 +83,30 @@ EXCLUDED = {
 }
 
 
-def is_valid(defname, node, byname, mod_on):
-    """ReadingOutcomeDoerGainResearch.IsValid, conditions (a) through (e)."""
+def unlocked(defname, node, byname, gates):
+    """The four second-unlock-step gates the mod's Patch_SchematicEligibility checks.
+
+    gates: {"mechanitor": bool, "grav_engine": bool,
+            "techprints": set of defNames whose techprint is applied,
+            "analyzed": set of ThingDef names already studied}
+    """
+    if techprints(node, byname) > 0 and defname not in gates["techprints"]:
+        return False                                              # TechprintRequirementMet
+    if text(node, "requiresMechanitor", byname, "") == "true" and not gates["mechanitor"]:
+        return False                                              # PlayerMechanitorRequirementMet
+    required = inherited(node, "requiredAnalyzed", byname)
+    if required is not None and any(li.text not in gates["analyzed"] for li in required):
+        return False                                              # AnalyzedThingsRequirementsMet
+    if text(node, "requireGravEngineInspected", byname, "") == "true" and not gates["grav_engine"]:
+        return False                                              # InspectionRequirementsMet
+    return True
+
+
+def is_valid(defname, node, byname, mod_on, gates):
+    """ReadingOutcomeDoerGainResearch.IsValid, conditions (a) through (e).
+
+    With the mod on, (b) and (e) are lifted and the four unlock gates are added instead.
+    """
     if inherited(node, "generalRules", byname) is None:
         return False                                              # (a)
     if not mod_on and defname in EXCLUDED:
@@ -95,6 +117,8 @@ def is_valid(defname, node, byname, mod_on):
         return False                                              # (d) tabs = Main
     if not mod_on and techprints(node, byname) > 0:
         return False                                              # (e) hardcoded
+    if mod_on and not unlocked(defname, node, byname, gates):
+        return False                                              # added by the mod
     return True
 
 
@@ -114,6 +138,14 @@ def main():
                              "WastepackAtomizer). Only these can differ from the "
                              "--finished-all-ungated assumption, and the script cannot "
                              "infer them - read them off the in-game research tab.")
+    parser.add_argument("--mechanitor", action="store_true",
+                        help="the colony contains a mechanitor")
+    parser.add_argument("--grav-engine", action="store_true",
+                        help="a grav engine has been inspected")
+    parser.add_argument("--techprints-applied", nargs="*", default=[], metavar="DEFNAME",
+                        help="projects whose techprint requirement is satisfied")
+    parser.add_argument("--analyzed", nargs="*", default=[], metavar="THINGDEF",
+                        help="studied items, e.g. NanostructuringChip SignalChip")
     args = parser.parse_args()
 
     if not os.path.isdir(args.data_dir):
@@ -146,18 +178,32 @@ def main():
     def finished(defname):
         return defname not in unfinished and base_cost(nodes[defname][0], byname) > 0
 
-    print(f"assumed state: {state}\n")
+    gates = {
+        "mechanitor": args.mechanitor,
+        "grav_engine": args.grav_engine,
+        "techprints": set(args.techprints_applied),
+        "analyzed": set(args.analyzed),
+    }
+
+    print(f"assumed state: {state}")
+    print(f"unlock gates : mechanitor={args.mechanitor}  gravEngineInspected={args.grav_engine}"
+          f"  techprintsApplied={sorted(gates['techprints']) or '[]'}"
+          f"  analyzed={sorted(gates['analyzed']) or '[]'}\n")
 
     for mod_on in (False, True):
         pool = sorted(
             f"{d} [{k}]" for d, (n, k) in nodes.items()
             if d in unfinished
             and all(p in nodes and finished(p) for p in prerequisites(n, byname))
-            and is_valid(d, n, byname, mod_on)
+            and is_valid(d, n, byname, mod_on, gates)
         )
         print(f"=== mod {'ON ' if mod_on else 'OFF'} -> {len(pool)} eligible subject(s) ===")
         for entry in pool:
             print("   ", entry)
+        if not pool:
+            print("    (none - OnBookGenerated will fall back to scanning every project,")
+            print("     a branch that ignores both IsFinished and PrerequisitesCompleted,")
+            print("     so books about already-researched topics appear instead)")
         print()
 
     print("=== gated, but blocked by an unfinished prerequisite ===")
@@ -166,6 +212,25 @@ def main():
         waiting = [p for p in prerequisites(node, byname) if p in unfinished]
         if waiting:
             print(f"    {defname}  <- waiting on {waiting}")
+
+    print("\n=== still locked, so the mod will NOT generate books for them ===")
+    for defname in sorted(gated | set(args.unfinished)):
+        node = nodes[defname][0]
+        if not unlocked(defname, node, byname, gates):
+            reasons = []
+            if techprints(node, byname) > 0 and defname not in gates["techprints"]:
+                reasons.append(f"needs {techprints(node, byname)} techprint(s)")
+            if text(node, "requiresMechanitor", byname, "") == "true" and not gates["mechanitor"]:
+                reasons.append("needs a mechanitor")
+            required = inherited(node, "requiredAnalyzed", byname)
+            if required is not None:
+                missing = [li.text for li in required if li.text not in gates["analyzed"]]
+                if missing:
+                    reasons.append(f"needs {', '.join(missing)} analysed")
+            if text(node, "requireGravEngineInspected", byname, "") == "true" \
+                    and not gates["grav_engine"]:
+                reasons.append("needs a grav engine inspected")
+            print(f"    {defname}: {'; '.join(reasons)}")
 
 
 if __name__ == "__main__":

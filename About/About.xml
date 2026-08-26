@@ -17,11 +17,13 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>Research schematics are never generated for a handful of research projects that vanilla hides behind a second unlock step - the Biotech mechtech line, the Odyssey gravtech line, and every Royalty project that needs a techprint.
+  <description>Vanilla never generates research schematics for the Biotech mechtech line, the Odyssey gravtech line, or any Royalty project that needs a techprint - and it keeps refusing even after you have applied the techprint, recruited a mechanitor, or inspected a grav engine. The research is unlocked and ready to study, but no book about it will ever exist.
 
-This mod lets schematics generate for those projects too. The unlock requirement itself is untouched: a pawn can read a schematic and bank research progress toward a gated project, but the project still cannot be completed at the bench until the techprint is applied, a mechanitor joins the colony, or a grav engine is inspected. Progress on a gated project parks just short of 100% and finishes the moment you satisfy the requirement.
+This mod ties schematic generation to whether the research is actually unlocked, instead of which DLC feature it belongs to. Satisfy the requirement and schematics for that project start appearing like any other.
 
-Works with modded research too, including techprint-gated projects added by other mods.
+Crucially, it does not flood your book pool with research you cannot use. A colony that never takes a mechanitor will never see a mechtech schematic. If anything the pool gets tidier: vanilla generates schematics for projects locked behind an unstudied chip - the wastepack atomizer being the usual culprit - and this mod stops that too.
 
-Safe to add to an existing save. Removing it mid-save leaves any part-read schematics pointing at projects they can no longer contribute to, so prefer removing it between playthroughs.</description>
+Works with modded research, including techprint-gated projects added by other mods.
+
+Safe to add to an existing save. If a requirement later lapses - your only mechanitor dies, say - any schematic already written about that research stops short of completing it.</description>
 </ModMetaData>

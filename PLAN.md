@@ -28,8 +28,13 @@ the intended targets, and `Dev/validate_patches.py` still passes. **Nothing abou
 runtime behaviour has been tested yet** — compiling proves the members exist and the
 attributes bind, not that the gate holds.
 
-**Next action:** Phase 4, the in-game test plan in §6. Tests 2–5 are the ones that matter;
-they are the first real evidence that the clamp works.
+**Design changed 2026-08-26 after play testing** — schematics now generate only for
+research whose unlock requirements are already met. See the callout above §3 for why, and
+§2a for the vanilla bug it fixes on the way. Changes 2 and 3 are rebuilt; still untested.
+
+**Next action:** Phase 4, the in-game test plan in §6. **Disable `Dev/TestHarness` first** —
+leaving it on is what made the previous test result unreadable (§6a). Test 1 is the one the
+redesign exists for.
 
 ### Cleanup owed before release
 
@@ -195,6 +200,24 @@ unnecessary. It does not set it, and the field defaults to `false` — checked i
 
 ---
 
+## 2a. `IsValid` checks one gate out of four — a vanilla bug
+
+`IsValid`'s clause (e) tests techprints. It never tests the other three unlock gates, so
+**vanilla already generates schematics for research the player cannot start.** The visible
+case, spotted in play 2026-08-26:
+
+`WastepackAtomizer` carries `<requiredAnalyzed><li>NanostructuringChip</li></requiredAnalyzed>`.
+Until that chip is studied, `AnalyzedThingsRequirementsMet` is false and the project cannot
+be researched — yet schematics for it spawn normally. `StandardMechtech`, `HighMechtech`
+and `UltraMechtech` carry the same field (`SignalChip`, `PowerfocusChip`,
+`NanostructuringChip`); they are only hidden from books by the exclude list, not by any
+check on the requirement itself.
+
+So the exclude list was never enforcing a rule. It is a hand-written patch over one symptom
+of a filter that asks the wrong question. Change 2 asks the right one instead, which
+removes the vanilla case as a side effect — schematics for a chip-locked project stop
+generating until the chip is studied.
+
 ## 3. What the mod does — three changes
 
 ### Change 1 — XML: drop the exclude list
@@ -213,35 +236,71 @@ unnecessary. It does not set it, and the field defaults to `false` — checked i
 Removes the whole `<exclude>` node, so mod-added excludes go too — consistent with the
 mod's purpose. Unblocks 7 projects.
 
-### Change 2 — Harmony: neutralise clause (e) in `IsValid`
+> **Design changed 2026-08-26 — read this before §3.** The original design let schematics
+> generate for *gated* research and relied on Change 3 to stop them completing it. Play
+> testing killed that: a player who never intends to take a mechanitor would see mechtech
+> schematics forever, crowding out books they could actually use. Most players never touch
+> mechtech at all.
+>
+> **The mod now ties generation to whether the research is unlocked, not to which DLC
+> feature it belongs to.** No mechanitor, no mechtech schematics. Apply a techprint and
+> that project starts generating. This is a *better* fit for the brief's "without weakening
+> the gate itself", and it also fixes a vanilla inconsistency for free — see §2a.
+>
+> Consequences: Change 2 below now checks the four gates as well as zeroing
+> `techprintCount`, and Change 3 drops from "the thing that preserves the gate" to a
+> backstop for gates that lapse after a book exists.
+
+### Change 2 — Harmony: make `IsValid` ask "is this unlocked?"
 
 Target: `AccessTools.Method(typeof(ReadingOutcomeDoerGainResearch), "IsValid")`
 
-Rather than re-implementing the method or transpiling the IL, temporarily zero the field
-the clause reads, run vanilla unchanged, and restore:
+The patch pulls in both directions at once:
+
+- **Wider** — zero `techprintCount` for the duration of the call so clause (e) stops
+  rejecting a techprint project whose techprint the player has already applied.
+- **Tighter** — reject any project whose unlock gates are not met, which vanilla never
+  checks (§2a).
 
 ```csharp
-static void Prefix(ResearchProjectDef project, out int __state)
+static bool Prefix(ResearchProjectDef project, ref bool __result, out int __state)
 {
+    __state = NoRestore;                      // -1 sentinel
+    if (project == null) return true;
+
+    if (!project.TechprintRequirementMet          // techprints applied
+        || !project.PlayerMechanitorRequirementMet // mechanitor in colony
+        || !project.AnalyzedThingsRequirementsMet  // required chip studied
+        || !project.InspectionRequirementsMet)     // grav engine inspected
+    {
+        __result = false;
+        return false;                         // still locked — skip the original
+    }
+
     __state = project.techprintCount;
     project.techprintCount = 0;
+    return true;
 }
 
-// Finalizer, not Postfix — a Postfix is skipped if the original throws.
+// Finalizer, not Postfix — a Postfix is skipped if the original throws. Finalizers also
+// run when a prefix skipped the original, hence the sentinel.
 static void Finalizer(ResearchProjectDef project, int __state)
 {
-    project.techprintCount = __state;
+    if (project != null && __state != NoRestore) project.techprintCount = __state;
 }
 ```
 
-Every other condition (a–d) is still evaluated exactly as vanilla evaluates it, so if
-Ludeon adds a sixth condition in 1.7 we inherit it instead of silently ignoring it.
-Book generation is single-threaded and the window is one method call, so the mutation is
-not observable elsewhere.
+**The gate check has to run before the field is zeroed.** `TechprintRequirementMet` reads
+`TechprintCount` -> `techprintCount`, the very field the prefix clears, so testing it from
+a Postfix would always report "met". This is the one ordering constraint in the patch.
 
-Unblocks the 13 Royalty projects and any modded techprint research (this is where most of
-the real-world value is — Vanilla Expanded and friends add a lot of techprint-gated
-research).
+Conditions (a)–(d) are still evaluated exactly as vanilla evaluates them, so a sixth
+condition added in 1.7 is inherited rather than silently ignored. Book generation is
+single-threaded and the window is one method call, so the mutation is not observable
+elsewhere.
+
+Covers the 13 Royalty projects and any modded techprint research — Vanilla Expanded and
+friends add a lot of it, and that is where most of the real-world value sits.
 
 **Note:** `ReadingOutcomeDoerGainAnomalyResearch` inherits `IsValid` without overriding
 it, so this patch also applies to the Anomaly book. Harmless — no Anomaly project has
@@ -487,20 +546,41 @@ Steam Workshop under `VitaKaninen`. Commit and push per the folder rules.
 
 Dev mode, Royalty + Biotech + Odyssey enabled.
 
+**Disable `Dev/TestHarness` for every test below.** Its `include` list replaces the whole
+candidate pool, and the include branch skips the `PrerequisitesCompleted` check the normal
+branch applies — which is exactly what produced the confusing 2026-08-26 result (see §6a).
+
+Predict each expected column with `Dev/simulate_pool.py` before looking in game.
+
 | # | Test | Expected |
 |---|---|---|
-| 1 | Spawn ~30 schematics, tally subjects | Techprint, Mechtech and Gravtech projects all appear |
-| 2 | Read a CataphractArmor schematic to 100% | Progress parks at ~99.9%; **no completion letter**; not researchable at the bench |
-| 3 | Then apply 2 techprints | Project becomes selectable; a short bench session completes it |
-| 4 | Read a BasicMechtech schematic with no mechanitor in the colony | Parks below 100%; stays locked |
-| 5 | Read a BasicGravtech schematic without a grav engine inspected | Parks below 100%; stays locked |
-| 6 | Normal bench research on an ungated project | Completes exactly as vanilla — proves the `AddProgress` clamp does not touch `ResearchPerformed` |
-| 7 | Read a schematic for an ordinary project | Unchanged from vanilla |
-| 8 | Load a save made before the mod | No errors, no progress reset |
-| 9 | Research tab UI on a 99.9% gated project | Check the progress bar and lock reason render sensibly — untested code path in vanilla |
+| 1 | No mechanitor, no techprints, no grav engine. Spawn ~30 schematics | **No** mechtech, gravtech or techprint subjects at all |
+| 2 | Apply 2 Cataphract techprints, spawn ~30 | CataphractArmor now appears as a subject |
+| 3 | Read that CataphractArmor schematic to 100% | Completes normally — the gate is satisfied, so this is correct |
+| 4 | Recruit a mechanitor, spawn ~30 | BasicMechtech appears; StandardMechtech does not (needs BasicMechtech + SignalChip) |
+| 5 | Inspect a grav engine, spawn ~30 | BasicGravtech appears |
+| 6 | Before studying a NanostructuringChip, spawn ~30 | **No** WastepackAtomizer subject — the vanilla bug in §2a is fixed |
+| 7 | Generate a mechtech schematic, then let the only mechanitor die, then read it | Progress parks below 100%; research does not complete (Change 3's backstop) |
+| 8 | Normal bench research on an ungated project | Completes exactly as vanilla — proves the `AddProgress` clamp does not touch `ResearchPerformed` |
+| 9 | Read a schematic for an ordinary project | Unchanged from vanilla |
+| 10 | Load a save made before the mod | No errors, no progress reset |
 
-Test 6 is the regression guard for the riskiest patch. Test 9 is the one most likely to
-surface something cosmetic and unexpected.
+Test 1 is the one the design change exists for. Test 7 is the only remaining exercise of
+Change 3 and needs setting up deliberately. Test 8 is the regression guard for the riskiest
+patch.
+
+### 6a. Why the 2026-08-26 session's result was misleading
+
+Observed: StandardGravtech and StandardMechtech schematics spawning, no VenomSynthesis.
+Both are explained by `Dev/TestHarness` still being enabled, not by the mod:
+
+- its `include` list is exactly the seven mechtech/gravtech projects, and the include
+  branch of `OnBookGenerated` never checks `PrerequisitesCompleted`, so Standard tiers
+  qualified even with Basic unresearched;
+- VenomSynthesis is not in that list, so it could not appear at all.
+
+The harness is a debugging tool that *deliberately* replaces the candidate pool. Any test
+of what the player actually sees has to run with it off.
 
 ---
 
