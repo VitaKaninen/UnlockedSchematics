@@ -5,8 +5,8 @@ Lets research schematics generate for projects vanilla hides behind a second unl
 
 Findings, design and build order: [PLAN.md](PLAN.md). Original brief:
 [UnlockedSchematics-brief.md](UnlockedSchematics-brief.md).
-Folder-wide rules (commit/push, `.rimignore`, `loadFolders` shadowing) live in the parent
-folder's CLAUDE.md.
+Folder-wide rules (commit/push, `.rimignore`, `loadFolders` shadowing, and the XML `Class`
+attribute gotcha) live in the parent folder's CLAUDE.md.
 
 ## Before touching any patch XML
 
@@ -25,15 +25,6 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
 
 ## Gotchas
 
-- **`Class` goes on the field's own node, not a nested `<Operation>`.** For a
-  `PatchOperation`-typed field such as `PatchOperationConditional.match` / `.nomatch`, write
-  `<match Class="PatchOperationReplace">`. `DirectXmlToObject.ClassTypeOf` reads the `Class`
-  attribute off the node it is deserializing into the field, so wrapping an
-  `<Operation Class="...">` inside `<match>` leaves that node class-less; RimWorld
-  instantiates the abstract base and every apply logs *"Attempted to use PatchOperation
-  directly; patch will always fail"*. `<li Class="...">` inside a `List<PatchOperation>`
-  (e.g. `PatchOperationSequence.operations`) is the different, correct case — don't
-  generalise from it. Cost a test cycle 2026-08-26; `Dev/validate_patches.py` now catches it.
 - **Labels may not contain `[ ] { }`.** `Def.DisallowedLabelCharsRegex` rejects only
   those four; they break grammar resolution and raise a config error unless the def sets
   `ignoreIllegalLabelCharacterConfigError`. Parentheses are fine — prefer them over the

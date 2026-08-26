@@ -33,7 +33,6 @@ shipping Change 2 alone would let a reader complete a techprint-gated project ou
   seven subjects and rewrites the Schematic label.
 - `About/About.xml` still carries a `TEST BUILD` paragraph in its description. Remove it
   once Changes 2 and 3 land.
-- `supportedVersions` is 1.6 only. Decide on 1.5 (see §7).
 
 ### Environment notes for the next session
 
@@ -295,7 +294,10 @@ All 20 declare no `<tab>`, so they default to `Main` and pass condition (d). All
    closing Claude. The four state stores keyed to the old path were then migrated with
    `~/.claude/bin/migrate_project_path.py`; procedure in `~/.claude/docs/SESSIONS.md`.
 2. `git init` + `.gitignore` (`.claude/`, `obj/`, `bin/`).
-3. No GitHub remote — the folder rules say to ask first, and it has not been asked yet.
+3. **No GitHub remote yet, by decision (2026-08-26).** Everything in the repo so far is
+   test scaffolding that will be thrown away; the remote gets created once Changes 2 and 3
+   land and there is something permanent to publish. Until then the folder-wide "commit and
+   push every change" rule is commit-only — do **not** create the remote to satisfy it.
 
 ### Phase 1 — skeleton
 
@@ -423,7 +425,14 @@ surface something cosmetic and unexpected.
    unblocked project is exactly as likely as any other. Arguably a Cataphract schematic
    should be rarer than a Stonecutting one. Out of scope for 1.0; noted so it is a choice
    rather than an oversight.
-3. **`packageId` and `.rimignore`** — pending a read of a sibling mod.
+
+### Settled — do not reopen without a reason
+
+- **RimWorld 1.5 support: no.** 1.6 only (decided 2026-08-26). `supportedVersions` in
+  `About/About.xml` is correct as it stands; don't add a 1.5 entry or a 1.5 load folder.
+- **GitHub remote: not yet.** See Phase 0 step 3.
+- **`packageId` and `.rimignore`: done.** `Vita.UnlockedSchematics`, matching
+  CarryCapacityFromBionics; `.rimignore` covers `PLAN.md`, `*-brief.md`, `Source`, `Dev`.
 
 ---
 
