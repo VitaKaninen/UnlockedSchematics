@@ -301,17 +301,20 @@ All 20 declare no `<tab>`, so they default to `Main` and pass condition (d). All
 
 ### Phase 1 — skeleton
 
+**Flat layout, no `Common/` and no `LoadFolders.xml`** — those exist to serve more than
+one game version, and 1.6 is the only supported version (§7, Settled). Items marked
+*to build* do not exist yet.
+
 ```
 UnlockedSchematics/
   About/
     About.xml            packageId, Harmony dependency, supportedVersions 1.6
-    Preview.png
-  Common/
-    Patches/
-      UnlockedSchematics_SchematicExcludes.xml
-    Assemblies/
-      UnlockedSchematics.dll
-  Source/
+    Preview.png          to build
+  Patches/
+    UnlockedSchematics_SchematicExcludes.xml
+  Assemblies/            to build
+    UnlockedSchematics.dll
+  Source/                to build
     UnlockedSchematics/
       UnlockedSchematics.csproj
       Mod.cs                 Harmony bootstrap
@@ -319,8 +322,8 @@ UnlockedSchematics/
       Patch_ResearchGateClamp.cs
   Dev/
     README.md
+    validate_patches.py
     TestHarness/           separate throwaway mod, forces schematic subjects for testing
-  LoadFolders.xml
   .rimignore
   .gitignore
   CLAUDE.md
@@ -328,21 +331,14 @@ UnlockedSchematics/
   UnlockedSchematics-brief.md
 ```
 
-Two things to settle by copying a sibling mod rather than inventing (both live outside
-this folder, so they need your go-ahead to read):
-
-- `About.xml` `packageId` convention — match `CarryCapacityFromBionics` / `DontTrashThis`.
-- `.rimignore` — the brief points at `CarryCapacityFromBionics` as the good template.
-  Must additionally list `PLAN.md`, `*-brief.md`, and `Source/`.
-
-On `LoadFolders.xml`: the brief flags a disputed claim that Patches are processed before
-Defs within one entry. It does not bite us — this mod ships no Defs, only one Patch and
-one assembly, so ordering within an entry is moot. Not worth resolving now.
+`packageId` and `.rimignore` are both done — see §7, Settled. The brief's open question
+about whether Patches are processed before Defs within one `loadFolders` entry is now moot
+twice over: there is no `LoadFolders.xml`, and the mod ships no Defs.
 
 Build target: the game assembly carries no `TargetFrameworkAttribute` (Unity does not emit
 one) but `Managed/` contains `netstandard.dll`, i.e. the .NET 4.x profile. `net472` via
 the `Krafs.Rimworld.Ref` + `Lib.Harmony` NuGet packages is the community standard for
-1.5/1.6 — confirm on first build rather than taking it on trust.
+1.6 — confirm on first build rather than taking it on trust.
 
 ### Phase 2 — Change 1, verify in isolation — **done, verified in game 2026-08-26**
 
