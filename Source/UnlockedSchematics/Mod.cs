@@ -4,8 +4,8 @@ using Verse;
 namespace UnlockedSchematics
 {
     /// <summary>
-    /// Entry point. RimWorld runs this static constructor once at startup, after defs are
-    /// loaded, and PatchAll applies every Harmony patch class in this assembly.
+    /// Entry point. RimWorld runs this static constructor once at startup, after defs load;
+    /// PatchAll applies every Harmony patch class in this assembly.
     /// </summary>
     [StaticConstructorOnStartup]
     public static class UnlockedSchematicsMod
