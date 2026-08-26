@@ -18,20 +18,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Versions are pinned, not floating, so the build is reproducible. Neither reference
-         version has to match what the game loads: 0Harmony and Assembly-CSharp are both
-         compiled without a strong name (PublicKeyToken is null), so the runtime binds them
-         by simple name and ignores the version. That is why a mod built against ref 1.6.4871
-         runs against any 1.6.x game build, and against Harmony 2.4.1 despite referencing 2.4.2. -->
+    <!-- Versions are pinned rather than floating so the build is reproducible. -->
 
-    <!-- Publicized RimWorld reference assemblies. Reference-only: never shipped. -->
+    <!-- Publicized RimWorld reference assemblies. Reference-only: never shipped. The version
+         need not match the installed game - Assembly-CSharp carries no strong name, so the
+         runtime binds it by simple name and ignores the reference version. -->
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" ExcludeAssets="runtime" PrivateAssets="all" />
 
-    <!-- Harmony comes from the Harmony mod at runtime, so compile against it but do not copy it.
-         2.4.1, not the newer 2.4.2, because 2.4.1 is the library the Harmony mod actually ships
-         (its own mod version reads 2.4.2, which is a separate version line - see PLAN.md Phase 3).
-         Reference *versions* bind loosely, but missing *members* do not: compiling against a
-         newer Harmony than the one loaded is how you earn a MissingMethodException at startup. -->
+    <!-- Harmony is supplied by the Harmony mod at runtime: compile against it, never copy it.
+         Track the 0Harmony.dll that mod actually ships, which is not the version its mod
+         manager entry displays. Reference versions bind loosely, but missing members do not -
+         compiling against a newer Harmony than the one loaded gives a MissingMethodException
+         at startup. -->
     <PackageReference Include="Lib.Harmony" Version="2.4.1" ExcludeAssets="runtime" PrivateAssets="all" />
 
     <!-- Lets net472 build on a machine with no Visual Studio targeting pack installed. -->

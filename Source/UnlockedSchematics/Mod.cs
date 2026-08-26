@@ -4,7 +4,8 @@ using Verse;
 namespace UnlockedSchematics
 {
     /// <summary>
-    /// Harmony bootstrap. Runs once after defs are loaded.
+    /// Entry point. RimWorld runs this static constructor once at startup, after defs are
+    /// loaded, and PatchAll applies every Harmony patch class in this assembly.
     /// </summary>
     [StaticConstructorOnStartup]
     public static class UnlockedSchematicsMod

@@ -6,75 +6,71 @@ using Verse;
 namespace UnlockedSchematics
 {
     /// <summary>
-    /// Change 2 - decide schematic eligibility on whether the research is actually
-    /// unlocked, rather than on which DLC feature it belongs to.
+    /// Chooses which research projects a schematic may be written about.
     ///
-    /// This patch pulls in both directions, and both halves matter:
+    /// Vanilla answers this by feature rather than by state: ReadingOutcomeDoerGainResearch
+    /// .IsValid rejects any project carrying a techprint requirement, applied or not, and
+    /// ignores the other unlock requirements entirely - so it will also offer a book for
+    /// research the player has no way to start. This patch makes the answer depend on
+    /// unlock state:
     ///
-    ///   WIDER  - vanilla's last clause is "return project.TechprintCount == 0", which
-    ///            rejects every techprint project outright, even one whose techprint the
-    ///            player has already applied. Zeroing the field for the duration of the
-    ///            call lets such a project through once it is genuinely unlocked.
+    ///     eligible        every unlock requirement is satisfied, techprints included
+    ///     not eligible    any unlock requirement is still outstanding
     ///
-    ///   TIGHTER- vanilla checks techprints but never checks the other three unlock
-    ///            gates, so it will happily generate a book for research the player
-    ///            cannot start. That is visible in vanilla: WastepackAtomizer requires a
-    ///            NanostructuringChip to be analysed, and schematics for it spawn anyway.
-    ///            Removing the exclude list (Change 1) would multiply that problem - a
-    ///            colony that never takes a mechanitor would see mechtech schematics
-    ///            forever, crowding out books it could actually use.
+    /// Removing the &lt;exclude&gt; blocklist (see Patches/) is what lets mechtech and
+    /// gravtech projects reach this check at all; this patch decides whether they pass it.
     ///
-    /// Net effect: a schematic can be about any project whose unlock requirements are
-    /// met, and about no project whose are not. Nothing is gated by which DLC it came
-    /// from any more.
-    ///
-    /// The gate check runs in the prefix, before the field is zeroed, because
-    /// TechprintRequirementMet reads the very field this patch temporarily clears -
-    /// checking it afterwards would always report "met".
-    ///
-    /// Note: ReadingOutcomeDoerGainAnomalyResearch inherits IsValid without overriding
-    /// it, so this patch applies to the Anomaly book too. Harmless - no Anomaly project
-    /// has techprints - but stated here so it is not rediscovered as a surprise later.
+    /// Also applies to the Anomaly book, since ReadingOutcomeDoerGainAnomalyResearch
+    /// inherits IsValid without overriding it. No Anomaly project uses techprints, so only
+    /// the unlock-requirement half has any effect there.
     /// </summary>
     [HarmonyPatch]
     public static class Patch_SchematicEligibility
     {
-        /// <summary>__state sentinel meaning "the prefix never touched techprintCount".</summary>
+        /// <summary>__state value meaning "the prefix did not touch techprintCount".</summary>
         private const int NoRestore = -1;
 
-        // IsValid is private, so it cannot be named with nameof.
+        // IsValid is private, so it cannot be reached with nameof.
         private static MethodBase TargetMethod()
         {
             return AccessTools.Method(typeof(ReadingOutcomeDoerGainResearch), "IsValid");
         }
 
         /// <summary>
-        /// True when every second unlock step on the project has been satisfied. These are
-        /// the four gates ResearchProjectDef.CanStartNow consults; the rest of what
-        /// CanStartNow tests (bench availability, prerequisites, IsFinished) is either
-        /// already handled by the caller or is a passing situation rather than an unlock.
+        /// Whether every unlock requirement on the project is satisfied. These are the four
+        /// gates ResearchProjectDef.CanStartNow consults for unlock state. Its remaining
+        /// tests - prerequisites, IsFinished, bench availability - are either applied by the
+        /// caller already or describe a passing situation rather than an unlock.
         /// </summary>
         private static bool Unlocked(ResearchProjectDef project)
         {
             return project.TechprintRequirementMet          // Royalty techprints applied
                 && project.PlayerMechanitorRequirementMet   // Biotech mechanitor in colony
-                && project.AnalyzedThingsRequirementsMet    // required chip studied
+                && project.AnalyzedThingsRequirementsMet    // required item studied
                 && project.InspectionRequirementsMet;       // Odyssey grav engine inspected
         }
 
+        /// <summary>
+        /// Rejects locked projects outright, and clears techprintCount for the duration of
+        /// the call so that vanilla's own final clause - "return TechprintCount == 0" -
+        /// accepts an unlocked project whose techprint has been applied. Conditions vanilla
+        /// checks before that clause still decide the rest.
+        /// </summary>
         private static bool Prefix(ResearchProjectDef project, ref bool __result, out int __state)
         {
             __state = NoRestore;
 
             if (project == null)
             {
-                return true; // Let vanilla deal with it.
+                return true; // Let vanilla handle it.
             }
 
+            // Order matters: Unlocked() reads TechprintRequirementMet, which reads the field
+            // cleared below. Testing it afterwards would always report the requirement met.
             if (!Unlocked(project))
             {
                 __result = false;
-                return false; // Still locked - not a valid schematic subject. Skip the original.
+                return false; // Locked, so not a valid subject. Skip the original.
             }
 
             __state = project.techprintCount;
@@ -83,10 +79,11 @@ namespace UnlockedSchematics
         }
 
         /// <summary>
-        /// A Finalizer rather than a Postfix: a Postfix is skipped when the original throws,
-        /// which would leave the def permanently zeroed. Taking no __exception parameter and
-        /// returning void means exceptions still propagate untouched. Finalizers also run
-        /// when a prefix skipped the original, hence the NoRestore sentinel.
+        /// Restores techprintCount. A Finalizer rather than a Postfix because a Postfix is
+        /// skipped when the original throws, which would leave the def permanently zeroed.
+        /// Declaring no __exception parameter and returning void leaves exceptions to
+        /// propagate untouched. Finalizers also run when a prefix skipped the original,
+        /// which is what NoRestore distinguishes.
         /// </summary>
         private static void Finalizer(ResearchProjectDef project, int __state)
         {
