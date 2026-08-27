@@ -7,7 +7,8 @@ Paste-ready. Steam Workshop accepts BBCode, so the description below uses it.
 ## Summary line
 
 Schematics spawn for techprint, mechanitor and grav-engine research once your colony has
-met the requirement.
+met the requirement - and no research bench is needed to apply a techprint or analyse a
+mech chip.
 
 ---
 
@@ -28,6 +29,13 @@ Nothing else changes. Requirements you have not met still produce no books, so y
 never fills up with research you cannot use, and books you already own are untouched.
 
 Works with modded research too, including techprint-gated projects added by other mods.
+
+It also drops the research bench from the two interactions that only ever used it as a
+place to stand. Applying a techprint and analysing a mech chip normally send a pawn to a
+bench, so a colony that never researches still has to build one and keep it powered for
+those alone. With this mod, if there is no bench your pawn can use, both happen where the
+item lies. If you do have a usable bench, nothing changes - the pawn carries the item
+there exactly as before. The mechanitor requirement on chips is untouched.
 
 [list]
 [*] Requires Harmony.
@@ -54,5 +62,12 @@ Nothing else changes. Requirements you have not met still produce no books, so y
 never fills up with research you cannot use, and books you already own are untouched.
 
 Works with modded research too, including techprint-gated projects added by other mods.
+
+It also drops the research bench from the two interactions that only ever used it as a
+place to stand. Applying a techprint and analysing a mech chip normally send a pawn to a
+bench, so a colony that never researches still has to build one and keep it powered for
+those alone. With this mod, if there is no bench your pawn can use, both happen where the
+item lies. If you do have a usable bench, nothing changes - the pawn carries the item
+there exactly as before. The mechanitor requirement on chips is untouched.
 
 Requires Harmony. RimWorld 1.6. Safe to add to an existing save.
