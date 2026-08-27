@@ -15,16 +15,19 @@ XML for Core + Royalty + Ideology + Biotech + Anomaly + Odyssey.
 | Change 1 — XML, drop the exclude list | **done, verified in game** |
 | Change 2 — Harmony, unlock-aware eligibility | **done, verified in game** |
 | ~~Change 3 — Harmony, gate clamp~~ | **removed 2026-08-26** — see §2 |
-| Change 4 — bench-free techprint application | **built 2026-08-27, untested in game** — see §9 |
-| Change 5 — bench-free chip analysis | **built 2026-08-27, untested in game** — see §9 |
+| Change 4 — techprints applied in place | **built 2026-08-27, untested in game** — see §9 |
+| Change 5 — chips analysed in place | **built 2026-08-27, untested in game** — see §9 |
 
 **Changes 1 and 2 are the schematic half**: one XML patch and one Harmony patch. Neither
 touches `AddProgress`, so they cannot interfere with any other mod's research progress.
 
-**Changes 4 and 5 are a second, separate feature** (§9): a colony with no research bench can
-still apply techprints and analyse mech chips, by doing it where the item lies. Same audience
-as the schematic half — a colony that does not research — but a different mechanism, and it
-has not been run in game yet.
+**Changes 4 and 5 are a second, separate feature** (§9): techprints and mech chips are used
+where they lie, so a colony that does not research no longer has to keep a bench for those
+two interactions. Same audience as the schematic half, different mechanism, and not yet run
+in game. The bench contributes nothing to either job — §9 opens with the evidence — so this
+is unconditional rather than a no-bench fallback. Change 5 is **pure XML**; Change 4 needs a
+JobDef and driver only because vanilla's techprint driver hard-casts its target to
+`Building_ResearchBench`.
 
 **The mod does what it is meant to do.** Verified in a real save 2026-08-26, harness off:
 
@@ -452,6 +455,7 @@ UnlockedSchematics/
     Preview.png          to build
   Patches/
     UnlockedSchematics_SchematicExcludes.xml
+    UnlockedSchematics_AnalyzeInPlace.xml   the whole of Change 5 (§9)
   Defs/
     JobDefs/
       UnlockedSchematics_Jobs.xml   the in-place techprint job (§9)
@@ -463,7 +467,6 @@ UnlockedSchematics/
       Mod.cs                 Harmony bootstrap
       Patch_SchematicEligibility.cs
       Patch_TechprintInPlace.cs        §9
-      Patch_AnalyzeInPlace.cs          §9
       JobDriver_ApplyTechprintInPlace.cs
       UnlockedSchematicsDefOf.cs
   Dev/
@@ -719,83 +722,83 @@ Files that matter:
 
 ---
 
-## 9. Bench-free techprint application and chip analysis — built 2026-08-27
+## 9. Techprints and chips are used where they lie — 2026-08-27
 
-**The problem.** A colony that does not research still has to build, power and keep a
-research bench, purely so a pawn has somewhere to stand while applying a techprint or
-studying a mech chip. Nothing else about either interaction needs the bench.
+**The problem.** A colony that does not research still had to build, power and keep a
+research bench, purely so a pawn had somewhere to stand while applying a techprint or
+studying a mech chip.
 
-**The rule, chosen 2026-08-27:** the fallback fires *only when the pawn can find no usable
-bench*. With a bench available, both interactions behave exactly as vanilla — same walk,
-same haul, same duration. This is deliberately not a "skip the bench" option; a colony that
-built one still uses it.
+**The bench contributes nothing to either job.** This is the finding the whole design rests
+on, so it is written out rather than asserted:
 
-### Findings — where the bench requirement actually lives
-
-Read from the same 1.6.4871 decompile as §1. Both interactions have exactly **one** entry
-point, which is what makes this tractable:
-
-| | Techprint | Mech chip |
+| | Duration formula | Bench term? |
 |---|---|---|
-| Comp | `CompTechprint` | `CompAnalyzableUnlockResearch : CompAnalyzable` |
-| Only job creator | `CompTechprint.CompFloatMenuOptions` | `CompAnalyzable.OrderForceTarget` |
-| Job / driver | `ApplyTechprint` / `JobDriver_ApplyTechprint` | `AnalyzeItem` / `JobDriver_AnalyzeItem` |
-| Bench query | inline `GenClosest.ClosestThingReachable` | `StudyUtility.TryFindResearchBench` |
-| Power checked? | **no** | **yes** (`CompPowerTrader.PowerOn`) |
+| `JobDriver_ApplyTechprint` | `Toils_General.Wait(600)` | none — a flat 600 ticks, no stat read at all |
+| `JobDriver_AnalyzeItem` | `ceil(ceil(analysisDurationHours * 2500) / pawn.GetStatValue(ResearchSpeed))` | none |
 
-Two things worth knowing that contradict the usual description of this feature:
+`StatDefOf.ResearchSpeedFactor` — the stat the benches actually carry — is read in exactly
+two places in the assembly. `JobDriver_Research` reads it off `TargetThingA`, which for that
+job *is* the bench. `JobDriver_StudyItem` also reads it off `TargetThingA`, but there
+`TargetThingA` is **the item being studied**, not the bench — and `JobDriver_AnalyzeItem`
+overrides `GetStudyToils` anyway, so that line never runs for a chip. `ResearchSpeed` itself
+is a plain pawn stat (`ParentName="IntellectualSkillBase"`: skill, capacities,
+`WorkSpeedGlobal`) with no StatPart reading a workbench.
 
-- **Any research bench works, not just the hi-tech one.** Both queries ask for
-  `ThingRequestGroup.ResearchBench`, which is `typeof(Building_ResearchBench).IsAssignableFrom(def.thingClass)` —
-  and Core ships exactly two such ThingDefs, the simple bench and the hi-tech bench.
-- **The two paths disagree about power.** `CompTechprint` never checks it, so an unpowered
-  hi-tech bench still satisfies the techprint path; `StudyUtility.TryFindResearchBench` does
-  check it, so the same bench does not satisfy the chip path. Both patches below mirror
-  their own side's query rather than imposing one rule, so the fallback triggers on exactly
-  the cases vanilla would have refused.
+So analysing a chip at a hi-tech bench takes exactly as long as analysing it on the ground,
+and applying a techprint takes 600 ticks either way. The bench is a place to stand.
 
-### Change 5 — chips: vanilla already has the switch, it is just never on
+**Which is why the change is unconditional.** An earlier draft (built and then replaced the
+same day) fell back to in-place only when the pawn could find no usable bench. That preserved
+a distinction that does not exist: it cost roughly 130 lines of Harmony to keep offering
+players a strictly slower way to get an identical result. Dropping the condition removed the
+two most fragile patches in the mod and turned the chip half into plain def data.
 
-`CompProperties_Analyzable` carries a `canStudyInPlace` bool, and **Anomaly ships three
-things that set it to true** (`Anomaly/Defs/ThingDefs_Items/Items_Various.xml`). Analysing
-where the item lies is a supported vanilla mode with working toils; the Biotech chips simply
-do not opt into it. That makes this a much smaller change than it first looks.
+### Chips — XML only, no C#
 
-Three sites read the flag, and all three need to agree:
+`Patches/UnlockedSchematics_AnalyzeInPlace.xml`, one operation:
 
-1. `CompAnalyzable.CanInteract` — returns `"NoResearchBench"`, which greys out the float-menu
-   option and the gizmo.
-2. `CompAnalyzable.OrderForceTarget` — decides whether to look up a bench and put it in the
-   job's `targetB`.
-3. `JobDriver_StudyItem.CanStudyInPlace` — decides whether the toils haul to `targetB`.
+```xml
+<Operation Class="PatchOperationAdd">
+  <xpath>/Defs/ThingDef/comps/li[@Class="CompProperties_CompAnalyzableUnlockResearch"][not(canStudyInPlace)]</xpath>
+  <value>
+    <canStudyInPlace>true</canStudyInPlace>
+  </value>
+  <success>Always</success>
+</Operation>
+```
 
-`Patch_AnalyzeInPlace.cs` handles 1 and 2 by setting `canStudyInPlace` for the duration of
-the call and restoring it in a Finalizer — the same prefix/finalizer shape
-`Patch_SchematicEligibility` already uses on `techprintCount`, and safe for the same reason:
-one synchronous main-thread call, restored even if the original throws.
+`canStudyInPlace` is **vanilla's own flag**, on `CompProperties_Analyzable`, with vanilla
+toils behind it — Anomaly ships three things that set it. The Biotech chips simply never opt
+in. So this switches on supported behaviour instead of adding any.
 
-**Site 3 cannot use that trick and this is the ordering trap.** The driver reads the flag
-when the *job starts*, long after the finalizer has put it back — so it would see `false`,
-try to reserve an empty `targetB`, and fail. The postfix therefore reads the **job** instead
-of the def: no bench in the job means study in place. That also makes it impossible for the
-patch to touch a vanilla job, because `OrderForceTarget` is the only `AnalyzeItem` creator in
-the assembly and it never leaves `targetB` empty unless `canStudyInPlace` was already set.
+Three details in that one operation:
 
-`JobDefOf.StudyItem` exists in the def XML but **nothing in the assembly ever creates it** —
-it is modder-facing surface. So `JobDriver_StudyItem`'s only live use is the Anomaly/Biotech
-analyze path.
+- The `not(canStudyInPlace)` predicate means a mod that already sets the field is skipped
+  rather than given a duplicate node. `PatchOperationAdd` uses `SelectNodes`, so the
+  predicate is evaluated per comp, not once.
+- `success Always` because a game without Biotech has no such comps, and that is not a
+  failure. Without it the patch logs an error for every non-Biotech player.
+- Targeting the **comp class** rather than the three defNames picks up modded
+  analyse-to-unlock items for free, which matches how the schematic half treats modded
+  research.
 
-The mechanitor requirement on chips (`CompProperties_CompAnalyzableUnlockResearch.requiresMechanitor`)
-is untouched. This removes the bench, not the mechanitor — see §2's note on why that gate is
-the one that actually binds.
+Verified against the shipped defs by merging all 1558 def files into one `<Defs>` document
+and running the xpath: 3 matches — `SignalChip`, `PowerfocusChip`, `NanostructuringChip` —
+and 0 comps skipped for already carrying the field.
 
-### Change 4 — techprints: needs its own job
+The mechanitor requirement on chips
+(`CompProperties_CompAnalyzableUnlockResearch.requiresMechanitor`) is untouched. This removes
+the bench, not the mechanitor — see §2 on why that gate is the one that actually binds.
 
-`JobDriver_ApplyTechprint` casts `targetA` to `Building_ResearchBench` and its toils haul the
-techprint to that bench's interaction cell, so it cannot be handed a null bench. Rather than
-replace two vanilla methods with prefixes — invasive, and a conflict magnet for other mods —
-the mod ships its **own** JobDef and driver, `UnlockedSchematics_ApplyTechprintInPlace`.
-Everything else is vanilla's: the same 600-tick duration, the same
+### Techprints — needs a JobDef and driver
+
+No equivalent flag exists, and vanilla's driver cannot be reused:
+`JobDriver_ApplyTechprint.ResearchBench` is a **hard cast**,
+`(Building_ResearchBench)job.GetTarget(A).Thing`, reached from
+`TryMakePreToilReservations`. Anything but a bench in `targetA` is an `InvalidCastException`
+at job start. Rather than replace two vanilla methods with prefixes — invasive, and a
+conflict magnet — the mod ships its own `UnlockedSchematics_ApplyTechprintInPlace` JobDef and
+driver. Everything else is vanilla's: the same 600 ticks, the same
 `ResearchManager.ApplyTechprint` call, the same sound.
 
 **No `activeSkill` on the wait toil, on purpose.** `ResearchManager.ApplyTechprint` awards
@@ -803,42 +806,59 @@ Everything else is vanilla's: the same 600-tick duration, the same
 is what the techprint description means by the skill boost. Vanilla's driver sets no
 `activeSkill` either; adding one here would pay twice.
 
-`Patch_TechprintInPlace.cs` prefixes `CompTechprint.CompFloatMenuOptions`, re-runs vanilla's
-own bench query, and **returns `true` — running vanilla untouched — the moment it finds a
-bench.** Only the no-bench branch is replaced. Its option keeps vanilla's label
-(`"ApplyTechprint".Translate`) and vanilla's eligibility checks, including the
-`HaulAIUtility.PawnCanAutomaticallyHaul` call that exists purely to set `JobFailReason` for a
-forbidden or out-of-area techprint. **No new translation keys**, so nothing is English-only.
+`Patch_TechprintInPlace.cs` prefixes `CompTechprint.CompFloatMenuOptions` and substitutes the
+option. It keeps vanilla's label (`"ApplyTechprint".Translate`) and vanilla's eligibility
+checks, including the `HaulAIUtility.PawnCanAutomaticallyHaul` call that exists purely to set
+`JobFailReason` for a forbidden or out-of-area techprint. **No new translation keys**, so
+nothing is English-only.
 
-Cost: when a bench *does* exist, the bench query now runs twice per right-click — once in the
-prefix, once in vanilla. It is a float-menu open, not a tick.
+### Two facts about the bench requirement that the usual description gets wrong
 
-### Not chosen, and why
+- **Any research bench worked, not just the hi-tech one.** Both vanilla lookups asked for
+  `ThingRequestGroup.ResearchBench`, which is
+  `typeof(Building_ResearchBench).IsAssignableFrom(def.thingClass)` — and Core ships exactly
+  two such ThingDefs, the simple bench and the hi-tech bench.
+- **The two paths disagreed about power.** `StudyUtility.TryFindResearchBench` (chips)
+  required `CompPowerTrader.PowerOn`; the inline query in
+  `CompTechprint.CompFloatMenuOptions` (techprints) did not, and neither did
+  `JobDriver_ApplyTechprint`. An unpowered hi-tech bench therefore satisfied techprints and
+  not chips. Both asymmetries are moot now, but they are why the first draft needed two
+  different bench queries.
 
-- **Set `canStudyInPlace` in XML.** One `PatchOperationAdd` would make chip analysis work
-  anywhere, with no C# at all — but it is unconditional, so a colony with a bench would stop
-  using it. Rejected against the rule at the top of this section. It does nothing for
-  techprints either.
-- **Fall back to a table or crafting spot.** Needs a hand-written list of acceptable
-  buildings and still strands a colony with none of them.
-- **Always offer both options.** Adds a permanent menu entry to every techprint and chip, and
-  lets a bench colony skip the walk.
+### Rejected
+
+- **Fall back only when no bench is available.** Built first, then replaced — see above. It
+  kept a distinction with no mechanical content, at the cost of a def-field mutation across
+  `CanInteract`/`OrderForceTarget` plus a `JobDriver_StudyItem.CanStudyInPlace` postfix,
+  needed because that getter re-reads the flag when the *job starts*, long after a finalizer
+  has restored it. Recoverable from git history; do not restore it without re-reading the
+  duration table above.
+- **Walk to a table instead.** `Building_ResearchBench` is baked in as a *type* in four
+  places (`StudyUtility.TryFindResearchBench`'s out param, `OrderForceTarget`'s local,
+  `CompTechprint`'s `is` filter, and the hard cast above), so a table has to be smuggled past
+  all of them; the driver gets longer, not shorter; and there is no `Building_Table` class to
+  key on (`TableBase` is `thingClass Building`), so "what counts as a table" becomes a
+  permanent mod-compat question. Note the interaction-cell objection does *not* hold:
+  `ThingUtility.InteractionCellWhenAt` falls back to an adjacent standable cell for defs
+  without one.
+- **A second float-menu option, bench or in-place.** More code than either design, and it
+  asks the player to choose between two identical outcomes, one of which involves a walk.
 
 ### Test plan for §9 — all unrun
 
 Needs Royalty (techprints) and Biotech (chips). The mechanitor requirement still applies to
-chips, so tests 4–6 need a mechanitor.
+chips, so tests 3-5 need a mechanitor.
 
 | # | Test | Expected |
 |---|---|---|
-| 1 | Colony **with** a bench: right-click a techprint, apply it | Unchanged from vanilla — pawn hauls it to the bench |
-| 2 | Sell/deconstruct every bench, then right-click a techprint | Option is enabled; pawn walks to it, works 600 ticks in place, techprint is consumed, letter fires, 2000 Intellectual XP |
-| 3 | No bench, techprint forbidden | Option is refused with vanilla's forbidden wording, not a silent no-op |
-| 4 | Colony **with** a powered bench: analyse a SignalChip | Unchanged — pawn hauls it to the bench |
-| 5 | Cut power to the only hi-tech bench, analyse a SignalChip | Analysed in place (the chip path checks power; the techprint path does not) |
-| 6 | No bench at all, analyse a SignalChip with a mechanitor | Analysed in place, research unlocks |
-| 7 | No bench, analyse a SignalChip with **no** mechanitor | Still refused, "requires mechanitor" — the bench went away, the mechanitor gate did not |
-| 8 | Anomaly thing that already sets `canStudyInPlace` | Unchanged |
+| 1 | Right-click a techprint with a pawn, apply it | Pawn walks to it, works 600 ticks in place, techprint consumed, letter fires, 2000 Intellectual XP |
+| 2 | Same, with a research bench built and powered | Identical — the bench is never used or approached |
+| 3 | Analyse a SignalChip with a mechanitor, no bench | Analysed in place; the chip's research unlocks |
+| 4 | Same, with a powered hi-tech bench present | Identical, and no slower — the duration has no bench term |
+| 5 | Analyse a SignalChip with **no** mechanitor | Still refused, "requires mechanitor" — the bench went away, the mechanitor gate did not |
+| 6 | Techprint forbidden | Option refused with vanilla's forbidden wording, not a silent no-op |
+| 7 | Anomaly thing that already sets `canStudyInPlace` | Unchanged |
+| 8 | Load without Biotech | No patch error in the log (`success Always`) |
 
-Test 1 and 4 are the ones this design exists to protect: if either changes, the fallback is
-firing when it should not.
+Test 8 is the one most likely to be skipped and most likely to bite, since it only shows up
+for players who do not own the DLC.

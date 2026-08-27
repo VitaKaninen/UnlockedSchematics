@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- Analyse research-unlocking items (the Biotech chips, and any modded equivalent) where
+       they lie, instead of hauling them to a research bench.
+
+       canStudyInPlace is vanilla's own flag, and Anomaly already ships three things that set
+       it, so this switches on supported behaviour rather than adding any. Nothing is lost by
+       skipping the bench: JobDriver_AnalyzeItem's duration is
+       analysisDurationHours / pawn ResearchSpeed, with no term for the bench at all. See
+       PLAN.md section 9.
+
+       The not(canStudyInPlace) predicate skips comps that already carry the field, so a mod
+       that sets it cannot end up with a duplicate node. success Always because a game
+       without Biotech has no such comps to patch, and that is not a failure. -->
+  <Operation Class="PatchOperationAdd">
+    <xpath>/Defs/ThingDef/comps/li[@Class="CompProperties_CompAnalyzableUnlockResearch"][not(canStudyInPlace)]</xpath>
+    <value>
+      <canStudyInPlace>true</canStudyInPlace>
+    </value>
+    <success>Always</success>
+  </Operation>
+
+</Patch>

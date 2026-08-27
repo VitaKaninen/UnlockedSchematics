@@ -4,9 +4,9 @@ Two features for colonies that do not research.
 
 1. Lets research schematics generate for projects vanilla hides behind a second unlock step
    (Royalty techprints, Biotech mechtech, Odyssey gravtech) without weakening the gate itself.
-2. Lets a colony with no usable research bench apply techprints and analyse mech chips where
-   the item lies, instead of having to keep a bench for that one interaction. Falls back only
-   when no bench is available — PLAN.md §9.
+2. Applies techprints and analyses mech chips where the item lies, so no research bench is
+   needed for either. Unconditional, because the bench contributes nothing to either job —
+   PLAN.md §9.
 
 Findings, design and build order: [PLAN.md](PLAN.md). Original brief:
 [UnlockedSchematics-brief.md](UnlockedSchematics-brief.md).
@@ -75,21 +75,29 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   schematic stops providing an outcome once every project in it is finished.
   Investigated and declined 2026-08-26 — including why textbook competition is not
   worth fixing. Read PLAN.md §7a before re-opening it.
-- **In-place analysis is a vanilla feature you can switch on, not one you have to build.**
-  `CompProperties_Analyzable.canStudyInPlace` exists and Anomaly ships three things that
-  set it; the Biotech chips just never opt in. Check for a flag like this before writing
-  toils. **But the flag is read at two different times** — `CompAnalyzable.CanInteract` and
-  `OrderForceTarget` read it when the player clicks, `JobDriver_StudyItem.CanStudyInPlace`
-  reads it again when the *job starts*. A prefix/finalizer that flips it for one call is
-  long gone by then, so the driver has to be told separately (PLAN.md §9 reads the job's
-  empty `targetB` instead). Same trap for any def field a job driver re-reads later.
-- **The two bench lookups disagree about power, so don't unify them.**
-  `StudyUtility.TryFindResearchBench` (chips) requires `CompPowerTrader.PowerOn`; the inline
-  query in `CompTechprint.CompFloatMenuOptions` (techprints) does not, and neither does
-  `JobDriver_ApplyTechprint`. An unpowered hi-tech bench therefore satisfies techprints and
-  not chips. Also: **both accept the *simple* research bench** — the request is
-  `ThingRequestGroup.ResearchBench`, i.e. any `Building_ResearchBench`, of which Core ships
-  two. "You need a hi-tech bench for techprints" is wrong.
+- **The research bench contributes nothing to applying a techprint or analysing a chip.**
+  `JobDriver_ApplyTechprint` is a flat `Toils_General.Wait(600)` with no stat read at all,
+  and `JobDriver_AnalyzeItem`'s duration is `analysisDurationHours * 2500 / pawn
+  ResearchSpeed` with no bench term. `ResearchSpeedFactor` — the stat benches carry — is
+  read in only two places, and in `JobDriver_StudyItem` it is read off the *item being
+  studied*, not a bench (and `JobDriver_AnalyzeItem` overrides that method anyway). This is
+  why §9 is unconditional: preserving a bench path preserves nothing. **Check the duration
+  formula before assuming a workbench matters to a job.**
+- **In-place analysis is a vanilla feature you switch on, not one you build.**
+  `CompProperties_Analyzable.canStudyInPlace` exists, Anomaly ships three things that set
+  it, and the Biotech chips just never opt in — so Change 5 is one `PatchOperationAdd` and
+  no C# at all. Look for a flag like this before writing toils.
+- **A def field a job driver re-reads at job start cannot be patched with a
+  prefix/finalizer flip.** `canStudyInPlace` is read by `CompAnalyzable.CanInteract` and
+  `OrderForceTarget` when the player clicks, then *again* by
+  `JobDriver_StudyItem.CanStudyInPlace` when the job actually starts — by which point any
+  finalizer has restored it. Cost a whole design in §9 before the unconditional XML route
+  replaced it. Applies to any temporary def mutation, not just this field.
+- **Both bench lookups accept the *simple* research bench**, not just the hi-tech one: the
+  request is `ThingRequestGroup.ResearchBench`, i.e. any `Building_ResearchBench`, of which
+  Core ships two. They also disagree about power — `StudyUtility.TryFindResearchBench`
+  (chips) requires `CompPowerTrader.PowerOn`, `CompTechprint.CompFloatMenuOptions`
+  (techprints) does not. "You need a powered hi-tech bench for techprints" is wrong twice.
 - **`JobDefOf.StudyItem` has no creator anywhere in the assembly.** It exists in
   `Jobs_Work.xml` as modder-facing surface only; `JobDriver_StudyItem`'s only live use is
   `AnalyzeItem`, created solely by `CompAnalyzable.OrderForceTarget`. Worth knowing before

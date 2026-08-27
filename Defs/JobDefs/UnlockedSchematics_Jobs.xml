@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
 
-  <!-- Applying a techprint without hauling it to a research bench. Offered only when the
-       pawn can find no bench at all; see Patch_TechprintInPlace. Vanilla's ApplyTechprint
-       job cannot be reused because its driver casts targetA to Building_ResearchBench. -->
+  <!-- Applying a techprint where it lies, with no research bench. Replaces vanilla's
+       option; see Patch_TechprintInPlace. Vanilla's ApplyTechprint job cannot be reused
+       because its driver casts targetA to Building_ResearchBench. -->
   <JobDef>
     <defName>UnlockedSchematics_ApplyTechprintInPlace</defName>
     <driverClass>UnlockedSchematics.JobDriver_ApplyTechprintInPlace</driverClass>

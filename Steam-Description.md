@@ -7,8 +7,8 @@ Paste-ready. Steam Workshop accepts BBCode, so the description below uses it.
 ## Summary line
 
 Schematics spawn for techprint, mechanitor and grav-engine research once your colony has
-met the requirement - and no research bench is needed to apply a techprint or analyse a
-mech chip.
+met the requirement - and techprints and mech chips are used where they lie, with no
+research bench needed.
 
 ---
 
@@ -33,9 +33,12 @@ Works with modded research too, including techprint-gated projects added by othe
 It also drops the research bench from the two interactions that only ever used it as a
 place to stand. Applying a techprint and analysing a mech chip normally send a pawn to a
 bench, so a colony that never researches still has to build one and keep it powered for
-those alone. With this mod, if there is no bench your pawn can use, both happen where the
-item lies. If you do have a usable bench, nothing changes - the pawn carries the item
-there exactly as before. The mechanitor requirement on chips is untouched.
+those alone. With this mod, both happen where the item lies.
+
+Nothing is lost by skipping the bench. Neither job reads any stat off it - applying a
+techprint is a fixed length, and analysing a chip scales only with the pawn - so both take
+exactly as long as they always did. You just save the walk. The mechanitor requirement on
+chips is untouched.
 
 [list]
 [*] Requires Harmony.
@@ -66,8 +69,11 @@ Works with modded research too, including techprint-gated projects added by othe
 It also drops the research bench from the two interactions that only ever used it as a
 place to stand. Applying a techprint and analysing a mech chip normally send a pawn to a
 bench, so a colony that never researches still has to build one and keep it powered for
-those alone. With this mod, if there is no bench your pawn can use, both happen where the
-item lies. If you do have a usable bench, nothing changes - the pawn carries the item
-there exactly as before. The mechanitor requirement on chips is untouched.
+those alone. With this mod, both happen where the item lies.
+
+Nothing is lost by skipping the bench. Neither job reads any stat off it - applying a
+techprint is a fixed length, and analysing a chip scales only with the pawn - so both take
+exactly as long as they always did. You just save the walk. The mechanitor requirement on
+chips is untouched.
 
 Requires Harmony. RimWorld 1.6. Safe to add to an existing save.

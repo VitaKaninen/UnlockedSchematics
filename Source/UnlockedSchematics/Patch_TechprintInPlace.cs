@@ -7,16 +7,17 @@ using Verse.AI;
 namespace UnlockedSchematics
 {
     /// <summary>
-    /// Lets a colony with no research bench apply techprints.
+    /// Applies techprints where they lie, instead of hauling them to a research bench.
     ///
     /// Vanilla's CompTechprint.CompFloatMenuOptions builds an ApplyTechprint job only if it
     /// finds a bench; with none, the menu option still appears but clicking it just prints
-    /// "MessageNoResearchBenchForTechprint". A research-free colony therefore has to build
-    /// and keep a bench for this one interaction.
+    /// "MessageNoResearchBenchForTechprint". A colony that does not research therefore has to
+    /// build and keep a bench for this one interaction - and the bench does nothing for it,
+    /// since JobDriver_ApplyTechprint is a flat 600 tick wait with no stat read off the bench.
     ///
-    /// This prefix runs the same bench query vanilla runs. If it finds a bench, vanilla is
-    /// left to run untouched - nothing changes for a colony that has one. Only when there is
-    /// no bench does it substitute an option that queues the in-place job instead.
+    /// So this replaces the option outright rather than falling back only when no bench is
+    /// found. The chip half of the same feature is plain def data - see
+    /// Patches/UnlockedSchematics_AnalyzeInPlace.xml.
     /// </summary>
     [HarmonyPatch(typeof(CompTechprint), nameof(CompTechprint.CompFloatMenuOptions))]
     public static class Patch_TechprintInPlace
@@ -24,15 +25,11 @@ namespace UnlockedSchematics
         private static bool Prefix(CompTechprint __instance, Pawn selPawn, ref IEnumerable<FloatMenuOption> __result)
         {
             // Vanilla opens with ModLister.CheckRoyalty, which logs if Royalty is missing.
-            // Read the flag directly so this check cannot produce that message itself.
-            if (!ModLister.RoyaltyInstalled)
+            // Read the flag directly so this check cannot produce that message itself, and
+            // leave the no-Royalty case to vanilla.
+            if (!ModLister.RoyaltyInstalled || selPawn == null || selPawn.Map == null)
             {
                 return true;
-            }
-
-            if (selPawn == null || selPawn.Map == null || FindBench(selPawn) != null)
-            {
-                return true; // A bench is available: vanilla behaviour, unmodified.
             }
 
             __result = InPlaceOptions(__instance, selPawn);
@@ -40,28 +37,9 @@ namespace UnlockedSchematics
         }
 
         /// <summary>
-        /// The same query CompTechprint.CompFloatMenuOptions uses to find a bench. Kept
-        /// identical so the fallback triggers on exactly the cases vanilla would refuse -
-        /// no bench built, or none reachable, reservable and unforbidden for this pawn.
-        /// Note this ignores power: JobDriver_ApplyTechprint never checks it either, so an
-        /// unpowered hi-tech bench still counts as available, as in vanilla.
-        /// </summary>
-        private static Thing FindBench(Pawn selPawn)
-        {
-            return GenClosest.ClosestThingReachable(
-                selPawn.Position,
-                selPawn.Map,
-                ThingRequest.ForGroup(ThingRequestGroup.ResearchBench),
-                PathEndMode.InteractionCell,
-                TraverseParms.For(selPawn, Danger.Some),
-                9999f,
-                (Thing t) => t is Building_ResearchBench && !t.IsForbidden(selPawn) && selPawn.CanReserve(t));
-        }
-
-        /// <summary>
         /// Mirrors vanilla's option-building, minus the bench. The eligibility checks and the
         /// label are vanilla's own, so a pawn who cannot do the work is refused for the same
-        /// reason and in the same words as before.
+        /// reason and in the same words as before, and no new translation keys are needed.
         /// </summary>
         private static IEnumerable<FloatMenuOption> InPlaceOptions(CompTechprint comp, Pawn selPawn)
         {

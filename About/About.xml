@@ -27,7 +27,7 @@ Works with modded research, including techprint-gated projects added by other mo
 
 Books you already have are left alone. If a requirement later lapses - your only mechanitor dies, say - a schematic you already own stays readable and can still finish that research, exactly as in vanilla. No new ones will spawn until the requirement is met again.
 
-It also drops the research bench from the two interactions that only ever used it as a place to stand. If your colony has no bench a pawn can use, applying a techprint and analysing a mech chip both happen where the item lies, so you no longer have to keep a bench solely for those. If you do have a usable bench, nothing changes - the pawn carries the item there exactly as before. The mechanitor requirement on chips is untouched.
+It also drops the research bench from the two interactions that only ever used it as a place to stand. Applying a techprint and analysing a mech chip now happen where the item lies, so you no longer need a bench for either. Nothing is lost by skipping it: neither job reads any stat off the bench, so both take exactly as long as they always did - you just save the walk. The mechanitor requirement on chips is untouched.
 
 Safe to add to an existing save.</description>
 </ModMetaData>
