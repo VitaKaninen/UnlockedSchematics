@@ -1,4 +1,3 @@
-using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -11,17 +10,13 @@ namespace UnlockedSchematics
     /// techprint requirement and ignores the other requirements. The Anomaly book inherits
     /// IsValid unchanged, so it is covered too.
     /// </summary>
-    [HarmonyPatch]
+    // Named by string because IsValid is private, so nameof cannot see it. Harmony resolves
+    // this with AccessTools.DeclaredMethod, whose binding flags include NonPublic.
+    [HarmonyPatch(typeof(ReadingOutcomeDoerGainResearch), "IsValid")]
     public static class Patch_SchematicEligibility
     {
         /// <summary>__state value meaning "the prefix did not touch techprintCount".</summary>
         private const int NoRestore = -1;
-
-        // IsValid is private, so it cannot be reached with nameof.
-        private static MethodBase TargetMethod()
-        {
-            return AccessTools.Method(typeof(ReadingOutcomeDoerGainResearch), "IsValid");
-        }
 
         /// <summary>
         /// The four unlock gates ResearchProjectDef.CanStartNow consults. Its other tests -

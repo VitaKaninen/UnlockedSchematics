@@ -296,7 +296,16 @@ mod's purpose. Unblocks 7 projects.
 
 ### Change 2 — Harmony: make `IsValid` ask "is this unlocked?"
 
-Target: `AccessTools.Method(typeof(ReadingOutcomeDoerGainResearch), "IsValid")`
+Target: `[HarmonyPatch(typeof(ReadingOutcomeDoerGainResearch), "IsValid")]`
+
+Named by string, not `nameof`, because `IsValid` is private. That does **not** require a
+`TargetMethod()` override: Harmony resolves the attribute's `declaringType` + `methodName`
+through `AccessTools.DeclaredMethod`, whose `allDeclared` binding flags include
+`BindingFlags.NonPublic` (checked against Harmony `v2.4.1.0`, the version this mod pins).
+An earlier draft used `TargetMethod()` here for no reason; simplified 2026-08-28 after
+review. The one thing `DeclaredMethod` will not do is walk base types — irrelevant here,
+since `IsValid` is declared on this very class, and there is exactly one of it, so the
+no-argument-types form cannot be ambiguous either.
 
 The patch pulls in both directions at once:
 
@@ -570,7 +579,7 @@ against any 1.6.x game build; it is not a licence to compile against API that wi
 there.
 
 Build-time verification done: 0 warnings; both patch classes decompiled back out of the
-built DLL to confirm the attributes and `AccessTools` lookup are what was intended;
+built DLL to confirm the patch target attributes are what was intended;
 `IsValid`'s exact name/arity and all four gate property names read off the decompile first.
 
 ### Phase 4 — testing — **core behaviour verified 2026-08-26**

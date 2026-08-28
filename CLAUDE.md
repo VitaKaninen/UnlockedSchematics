@@ -87,6 +87,14 @@ ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/
   `CompProperties_Analyzable.canStudyInPlace` exists, Anomaly ships three things that set
   it, and the Biotech chips just never opt in — so Change 5 is one `PatchOperationAdd` and
   no C# at all. Look for a flag like this before writing toils.
+- **A private method needs no `TargetMethod()` override — just name it as a string in the
+  attribute.** `[HarmonyPatch(typeof(T), "PrivateName")]` resolves through
+  `AccessTools.DeclaredMethod`, whose binding flags include `NonPublic`. `nameof` not
+  working is not a reason to reach for `TargetMethod()`. Its two real uses: a target
+  `DeclaredMethod` cannot reach because it is declared on a *base* type, and things with no
+  attribute form. (A property getter does have one: `MethodType.Getter`.) There is no
+  static-field target convention in Harmony — only the attribute, `TargetMethod()`, and
+  `TargetMethods()`.
 - **A def field a job driver re-reads at job start cannot be patched with a
   prefix/finalizer flip.** `canStudyInPlace` is read by `CompAnalyzable.CanInteract` and
   `OrderForceTarget` when the player clicks, then *again* by
