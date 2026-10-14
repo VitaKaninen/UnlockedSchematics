@@ -35,7 +35,7 @@ The decompile is deliberately not in this repo — Ludeon's code must not be com
 public GitHub repo. Regenerate it into a scratch dir with:
 
 ```bash
-ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/Managed/Assembly-CSharp.dll"
+ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/Assembly-CSharp.dll"
 ```
 
 ## Gotchas

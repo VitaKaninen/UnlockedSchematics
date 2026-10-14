@@ -717,7 +717,7 @@ The decompile lives in this session's scratchpad, not in the repo — decompiled
 must not be committed to a public GitHub repo.
 
 ```bash
-ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/Managed/Assembly-CSharp.dll"
+ilspycmd -p -o <outdir> "C:/Program Files (x86)/Steam/steamapps/common/RimWorld/Assembly-CSharp.dll"
 ```
 
 Files that matter:
