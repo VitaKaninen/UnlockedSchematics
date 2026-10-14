@@ -6,21 +6,12 @@ using Verse.Sound;
 
 namespace UnlockedSchematics
 {
-    /// <summary>
-    /// Applies a techprint where it lies, with no research bench involved.
-    ///
-    /// Vanilla's JobDriver_ApplyTechprint cannot be reused: it casts targetA to
-    /// Building_ResearchBench and its toils haul the techprint to that bench's interaction
-    /// cell. This driver keeps everything else the same - same 600 tick duration, same
-    /// ResearchManager.ApplyTechprint call, same sound - so the only difference the player
-    /// sees is the missing walk. The intellectual XP comes from ApplyTechprint itself, which
-    /// is why no activeSkill is set here; vanilla's driver does not set one either.
-    /// </summary>
+    // Applies a techprint where it lies; vanilla's job needs a research bench
     public class JobDriver_ApplyTechprintInPlace : JobDriver
     {
         private const TargetIndex TechprintInd = TargetIndex.A;
 
-        /// <summary>Matches JobDriver_ApplyTechprint.Duration.</summary>
+        // Same as vanilla
         private const int Duration = 600;
 
         private Thing Techprint => job.GetTarget(TechprintInd).Thing;

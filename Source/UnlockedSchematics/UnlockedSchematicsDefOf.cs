@@ -3,7 +3,7 @@ using Verse;
 
 namespace UnlockedSchematics
 {
-    /// <summary>Defs this mod adds. Field names must match their defName.</summary>
+    // Field names must match the defNames
     [DefOf]
     public static class UnlockedSchematicsDefOf
     {

@@ -23,6 +23,27 @@ Output goes straight to `Assemblies/UnlockedSchematics.dll`, which **is** commit
 repo is the mod. Package versions are pinned on purpose; see PLAN.md Phase 3 before
 changing them.
 
+## Why the code is shaped this way
+Code comments are one-liners by the user's rule (parent `CLAUDE.md`), so the reasons live here.
+- `Patch_SchematicEligibility`: vanilla `IsValid` rejects any project with a techprint
+  requirement and ignores the other gates; the Anomaly book inherits `IsValid`, so it is covered.
+  `Unlocked()` must run **before** `techprintCount` is zeroed — `TechprintRequirementMet` reads
+  it and reports "met" at 0. Restore in a **Finalizer**, not a Postfix, so a throw cannot leave
+  the def at 0; it takes no `__exception`, so exceptions still propagate.
+- `Patch_TechprintInPlace`: replaces vanilla's option outright (the bench adds nothing).
+  Checks `ModLister.RoyaltyInstalled`, not `ModLister.CheckRoyalty`, which logs when Royalty is
+  missing. `HaulAIUtility.PawnCanAutomaticallyHaul` is called only for its side effect — it
+  sets `JobFailReason` for forbidden/out-of-area techprints. Labels and fail reasons are
+  vanilla's keys, so no new translations.
+- `JobDriver_ApplyTechprintInPlace`: vanilla's driver casts targetA to
+  `Building_ResearchBench`, so it cannot be reused. 600 ticks = vanilla. No `activeSkill`: the
+  XP comes from `ResearchManager.ApplyTechprint`, and vanilla sets none either.
+- `UnlockedSchematics_AnalyzeInPlace.xml`: `[not(canStudyInPlace)]` avoids a duplicate node
+  when another mod sets it; `success Always` because a game without Biotech has no such comps.
+- `UnlockedSchematics_SchematicExcludes.xml`: the exclude list is plain def data — `IsValid`
+  never reads `requiresMechanitor`/`requireGravEngineInspected`. The real gates stay in
+  `CanStartNow`; `Patch_SchematicEligibility` keeps locked projects out of the pool.
+
 ## Before touching any patch XML
 
 Run the validator. It checks the things an XML parser and an XPath test both miss:

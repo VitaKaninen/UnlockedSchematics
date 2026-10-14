@@ -6,11 +6,11 @@
     <RootNamespace>UnlockedSchematics</RootNamespace>
     <LangVersion>latest</LangVersion>
 
-    <!-- Drop the DLL straight into the mod's Assemblies folder. -->
+    <!-- Output to Assemblies -->
     <OutputPath>..\..\Assemblies\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
-    <!-- RimWorld loads a bare DLL; no pdb, no deps.json, no satellite files. -->
+    <!-- DLL only -->
     <DebugType>none</DebugType>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -18,21 +18,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Versions are pinned rather than floating so the build is reproducible. -->
-
-    <!-- Publicized RimWorld reference assemblies. Reference-only: never shipped. The version
-         need not match the installed game - Assembly-CSharp carries no strong name, so the
-         runtime binds it by simple name and ignores the reference version. -->
+    <!-- Reference only, never shipped -->
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" ExcludeAssets="runtime" PrivateAssets="all" />
 
-    <!-- Harmony is supplied by the Harmony mod at runtime: compile against it, never copy it.
-         Track the 0Harmony.dll that mod actually ships, which is not the version its mod
-         manager entry displays. Reference versions bind loosely, but missing members do not -
-         compiling against a newer Harmony than the one loaded gives a MissingMethodException
-         at startup. -->
+    <!-- Supplied by the Harmony mod; no newer than it ships -->
     <PackageReference Include="Lib.Harmony" Version="2.4.1" ExcludeAssets="runtime" PrivateAssets="all" />
 
-    <!-- Lets net472 build on a machine with no Visual Studio targeting pack installed. -->
+    <!-- Builds net472 without Visual Studio -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
