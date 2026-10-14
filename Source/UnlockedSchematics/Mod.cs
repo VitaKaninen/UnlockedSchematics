@@ -12,7 +12,7 @@ namespace UnlockedSchematics
     {
         static UnlockedSchematicsMod()
         {
-            new Harmony("Vita.UnlockedSchematics").PatchAll();
+            new Harmony("Vita.UnlockedSchematics").PatchAll(typeof(UnlockedSchematicsMod).Assembly);
         }
     }
 }
